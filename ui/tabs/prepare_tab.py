@@ -1,7 +1,7 @@
 # ui/tabs/prepare_tab.py
 import os
 import json
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QFrame, QLabel, QLineEdit, QComboBox, QScrollArea, QPushButton, QSplitter
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QFrame, QLabel, QLineEdit, QComboBox, QScrollArea, QPushButton, QSplitter, QProgressBar
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap, QIcon, QColor
 from core.config import TRANSLATIONS, get_resource_path
@@ -17,11 +17,8 @@ class PrepareTab(QWidget):
 
         # JSON Database pad bepalen
         self.json_path = get_resource_path("materials.json")
-
-        # De materiaallijst cache die we inladen vanuit JSON
         self.materials_database = []
 
-        # Kleuren voor overige zaken
         self.wire_colors = wire_colors if wire_colors else {
             "Koper": (0.85, 0.38, 0.15), "Goud": (0.95, 0.75, 0.1), "Zilver": (0.75, 0.75, 0.75),
             "Rood": (0.85, 0.15, 0.15), "Blauw": (0.15, 0.45, 0.75), "Groen": (0.15, 0.7, 0.3),
@@ -40,7 +37,6 @@ class PrepareTab(QWidget):
         lay_prepare.setContentsMargins(0, 0, 0, 0)
         lay_prepare.setSpacing(0)
 
-        # Create Splitter
         self.splitter = QSplitter(Qt.Horizontal)
         lay_prepare.addWidget(self.splitter)
 
@@ -147,6 +143,14 @@ class PrepareTab(QWidget):
         scroll_area.setWidget(scroll_content)
         sidebar_layout.addWidget(scroll_area)
 
+        # Progress bar
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setFixedHeight(12)
+        self.progress_bar.setRange(0, 100)
+        self.progress_bar.setValue(0)
+        self.progress_bar.hide()
+        sidebar_layout.addWidget(self.progress_bar)
+
         self.btn_update = QPushButton()
         self.btn_update.setObjectName("sliceActionButton")
         sidebar_layout.addWidget(self.btn_update)
@@ -157,10 +161,17 @@ class PrepareTab(QWidget):
 
         self.viewer = Dummy3DViewer()
 
-        # Add to splitter
         self.splitter.addWidget(sidebar_container)
         self.splitter.addWidget(self.viewer)
-        self.splitter.setStretchFactor(1, 1) # Viewer should grow
+        self.splitter.setStretchFactor(1, 1)
+
+    def set_calculating(self, is_calculating):
+        self.btn_update.setEnabled(not is_calculating)
+        if is_calculating:
+            self.progress_bar.show()
+            self.progress_bar.setValue(0)
+        else:
+            self.progress_bar.hide()
 
     def create_form_row(self, widget_right, text_label):
         row = QWidget(); lay = QHBoxLayout(row)

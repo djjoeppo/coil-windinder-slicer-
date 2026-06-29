@@ -2,8 +2,10 @@
 import numpy as np
 import pyqtgraph.opengl as gl
 from PySide6.QtWidgets import QApplication
+from PySide6.QtCore import QThread, Qt, QMetaObject, Q_ARG
 from core.coil_math import CoilMathEngine
 from core.gcode_engine import GCodeEngine
+from core.calculation_worker import CalculationWorker
 
 class CoilController:
     def __init__(self, ui_layout):
@@ -15,6 +17,16 @@ class CoilController:
         self.preview_viewer = self.tab_preview.viewer
 
         self.gcode_engine = GCodeEngine()
+
+        # Background Calculation Setup
+        self.calc_thread = QThread()
+        self.calc_worker = CalculationWorker()
+        self.calc_worker.moveToThread(self.calc_thread)
+        self.calc_thread.start()
+
+        self.calc_worker.finished.connect(self.on_calculation_finished)
+        self.calc_worker.progress.connect(self.tab_prepare.progress_bar.setValue)
+        self.calc_worker.error.connect(self.on_calculation_error)
 
         self.last_wire_cache = None
         self.last_spool_cache = None
@@ -48,50 +60,37 @@ class CoilController:
         self.preview_viewer.set_spool_visibility(self.spool_visible)
 
     def update_simulation(self, slider_value):
-        """Update the 3D viewer in the Preview tab based on simulation progress."""
         if self.last_wire_cache is None: return
 
         progress = slider_value / 1000.0
-        pts_list = self.last_wire_cache['pts_list']
-        num_wires = len(pts_list)
-        v = self.last_wire_cache['params']
+        meshes_data = self.last_wire_cache['meshes_data']
+        num_wires = len(meshes_data)
 
         meshes = []
         for w_idx in range(num_wires):
-            full_pts = pts_list[w_idx]
-            n_pts = len(full_pts)
-            current_n = max(2, int(n_pts * progress))
-            wire_pts = full_pts[:current_n]
+            m_data = meshes_data[w_idx]
+            if m_data is None: continue
 
-            if len(wire_pts) < 2:
-                meshes.append(gl.MeshData(vertexes=np.zeros((3, 3), dtype=np.float32), faces=np.zeros((1, 3), dtype=np.uint32)))
-                continue
+            n_pts = m_data['pts_count']
+            tube_res = 32
+            current_n_pts = max(2, int(n_pts * progress))
+            current_n_seg = current_n_pts - 1
 
-            _, v_side, v_up = CoilMathEngine.calculate_mesh_vectors(wire_pts, v['t_res'], (v['w']/2)*1.002)
-            tube_res = min(int(v['t_res']), 32)
-            ang = np.linspace(0, 2*np.pi, tube_res, endpoint=False, dtype=np.float32)
-            radius = (v['w']/2)*1.002
-            cos_ang = np.cos(ang).reshape(1, tube_res, 1)
-            sin_ang = np.sin(ang).reshape(1, tube_res, 1)
-            v_side_exp = v_side.reshape(-1, 1, 3)
-            v_up_exp = v_up.reshape(-1, 1, 3)
+            total_seg = n_pts - 1
+            f1 = m_data['faces'][:total_seg * tube_res]
+            f2 = m_data['faces'][total_seg * tube_res:]
 
-            verts = wire_pts.reshape(-1, 1, 3) + radius * (cos_ang * v_side_exp + sin_ang * v_up_exp)
-            verts = verts.reshape(-1, 3)
+            sliced_faces = np.vstack([
+                f1[:current_n_seg * tube_res],
+                f2[:current_n_seg * tube_res]
+            ])
 
-            n_seg = len(wire_pts) - 1
-            idx1 = np.arange(n_seg * tube_res, dtype=np.uint32).reshape(n_seg, tube_res)
-            idx2 = idx1 + tube_res
-            r1_n, r2_n = np.roll(idx1, -1, axis=1), np.roll(idx2, -1, axis=1)
-            f1 = np.column_stack([idx1.ravel(), r1_n.ravel(), idx2.ravel()])
-            f2 = np.column_stack([r1_n.ravel(), r2_n.ravel(), idx2.ravel()])
-            wire_faces = np.vstack([f1, f2])
-
-            meshes.append(gl.MeshData(vertexes=verts, faces=wire_faces))
+            meshes.append(gl.MeshData(vertexes=m_data['verts'], faces=sliced_faces))
 
         self.preview_viewer.render_wire_meshes(meshes)
+        self.apply_wire_materials(self.preview_viewer)
 
-        # Color wires according to settings
+    def apply_wire_materials(self, viewer):
         spool_mat = self.materials_db.get(self.tab_prepare.combo_spool_color.currentText(), self.materials_db["Standaard (Donker)"])
         is_multi = (self.tab_prepare.combo_wire_type.currentIndex() == 1)
         individual_wire_mats = []
@@ -100,7 +99,7 @@ class CoilController:
                 individual_wire_mats.append(self.materials_db.get(combo.currentText(), self.materials_db["Koper"]))
         else:
             individual_wire_mats.append(self.materials_db.get(self.tab_prepare.combo_wire_color.currentText(), self.materials_db["Koper"]))
-        self.preview_viewer.update_materials(individual_wire_mats, spool_mat)
+        viewer.update_materials(individual_wire_mats, spool_mat)
 
     def process_update(self):
         try:
@@ -118,85 +117,55 @@ class CoilController:
 
             wire_d_text = self.tab_prepare.input_wire_d_display.text().split(' ')[0]
             v['w'] = float(wire_d_text)
-
             v['t_res'] = float(self.tab_settings.inputs['t_res'].text())
             v['p_res'] = float(self.tab_settings.inputs['p_res'].text())
+            v['num_wires'] = num_wires
 
             if v['hole'] >= v['i']:
                 v['hole'] = v['i'] - 1.0
                 self.tab_prepare.inputs['hole'].setText(str(v['hole']))
 
-            wire_key = (v['w'], v['l'], v['i'], v['b'], v['t_res'], v['p_res'], num_wires)
             spool_key = (v['hole'], v['i'], v['f'], v['b'])
-
-            spool_mat = self.materials_db.get(self.tab_prepare.combo_spool_color.currentText(), self.materials_db["Standaard (Donker)"])
-
-            individual_wire_mats = []
-            if is_multi:
-                for combo in self.tab_prepare.wire_color_combos:
-                    individual_wire_mats.append(self.materials_db.get(combo.currentText(), self.materials_db["Koper"]))
-            else:
-                individual_wire_mats.append(self.materials_db.get(self.tab_prepare.combo_wire_color.currentText(), self.materials_db["Koper"]))
-
             if self.last_spool_cache is None or self.last_spool_cache != spool_key:
                 spool_data = CoilMathEngine.calculate_spool_geometry(v['hole'], v['i'], v['f'], v['b'])
                 self.viewer.build_spool_meshes(spool_data)
                 self.preview_viewer.build_spool_meshes(spool_data)
                 self.last_spool_cache = spool_key
 
-            if self.last_wire_cache is None or self.last_wire_cache['key'] != wire_key:
-                pts_list, length_m, angles_list = CoilMathEngine.calculate_path(v['w'], int(v['l']), v['i'], v['b'], v['p_res'], num_wires)
-
-                meshes = []
-                for w_idx in range(num_wires):
-                    wire_pts = pts_list[w_idx]
-                    if len(wire_pts) < 2:
-                        meshes.append(gl.MeshData(vertexes=np.zeros((3, 3), dtype=np.float32), faces=np.zeros((1, 3), dtype=np.uint32)))
-                        continue
-
-                    _, v_side, v_up = CoilMathEngine.calculate_mesh_vectors(wire_pts, v['t_res'], (v['w']/2)*1.002)
-                    tube_res = min(int(v['t_res']), 32)
-                    ang = np.linspace(0, 2*np.pi, tube_res, endpoint=False, dtype=np.float32)
-                    radius = (v['w']/2)*1.002
-                    cos_ang = np.cos(ang).reshape(1, tube_res, 1)
-                    sin_ang = np.sin(ang).reshape(1, tube_res, 1)
-                    v_side_exp = v_side.reshape(-1, 1, 3)
-                    v_up_exp = v_up.reshape(-1, 1, 3)
-
-                    verts = wire_pts.reshape(-1, 1, 3) + radius * (cos_ang * v_side_exp + sin_ang * v_up_exp)
-                    verts = verts.reshape(-1, 3)
-                    n_seg = len(wire_pts) - 1
-                    idx1 = np.arange(n_seg * tube_res, dtype=np.uint32).reshape(n_seg, tube_res)
-                    idx2 = idx1 + tube_res
-                    r1_n, r2_n = np.roll(idx1, -1, axis=1), np.roll(idx2, -1, axis=1)
-                    f1 = np.column_stack([idx1.ravel(), r1_n.ravel(), idx2.ravel()])
-                    f2 = np.column_stack([r1_n.ravel(), r2_n.ravel(), idx2.ravel()])
-                    wire_faces = np.vstack([f1, f2])
-                    meshes.append(gl.MeshData(vertexes=verts, faces=wire_faces))
-
-                self.viewer.render_wire_meshes(meshes)
-                self.last_wire_cache = {'key': wire_key, 'length': length_m, 'pts_list': pts_list, 'angles_list': angles_list, 'params': v}
-
-                # Reset simulation on new calculation
-                self.tab_preview.slider.setValue(1000)
-                self.update_simulation(1000)
-
-            self.viewer.update_materials(individual_wire_mats, spool_mat)
-            self.preview_viewer.update_materials(individual_wire_mats, spool_mat)
-
-            if self.last_wire_cache:
-                self.gcode_engine.units = self.tab_settings.combo_units.currentText()
-                self.gcode_engine.start_gcode = self.tab_settings.txt_start_gcode.toPlainText()
-                self.gcode_engine.end_gcode = self.tab_settings.txt_end_gcode.toPlainText()
-
-                gcode = self.gcode_engine.generate(
-                    self.last_wire_cache['pts_list'],
-                    self.last_wire_cache['angles_list'],
-                    units=self.gcode_engine.units
-                )
-                self.tab_preview.set_gcode(gcode)
+            # Start background calculation
+            self.tab_prepare.set_calculating(True)
+            QMetaObject.invokeMethod(self.calc_worker, "run_calculation",
+                                     Qt.QueuedConnection,
+                                     Q_ARG(dict, v))
 
         except Exception as e:
-            print(f"Update error: {e}")
-            import traceback
-            traceback.print_exc()
+            print(f"Update start error: {e}")
+
+    def on_calculation_finished(self, result):
+        self.tab_prepare.set_calculating(False)
+        self.last_wire_cache = result
+
+        meshes = []
+        for m_data in result['meshes_data']:
+            if m_data:
+                meshes.append(gl.MeshData(vertexes=m_data['verts'], faces=m_data['faces']))
+        self.viewer.render_wire_meshes(meshes)
+        self.apply_wire_materials(self.viewer)
+
+        self.tab_preview.slider.setValue(1000)
+        self.update_simulation(1000)
+
+        self.gcode_engine.units = self.tab_settings.combo_units.currentText()
+        self.gcode_engine.start_gcode = self.tab_settings.txt_start_gcode.toPlainText()
+        self.gcode_engine.end_gcode = self.tab_settings.txt_end_gcode.toPlainText()
+
+        gcode = self.gcode_engine.generate(
+            result['pts_list'],
+            result['angles_list'],
+            units=self.gcode_engine.units
+        )
+        self.tab_preview.set_gcode(gcode)
+
+    def on_calculation_error(self, err_msg):
+        self.tab_prepare.set_calculating(False)
+        print(f"Calculation Error: {err_msg}")
