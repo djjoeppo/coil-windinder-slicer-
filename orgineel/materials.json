@@ -1,0 +1,29 @@
+[
+    {
+        "name": "koper",
+        "diameter": 2.0,
+        "isolation": 0.0,
+        "ohm_per_meter": 8.0,
+        "max_current": 1.0,
+        "max_voltage": 5.0,
+        "min_spool": 0.0
+    },
+    {
+        "name": "koper",
+        "diameter": 0.15,
+        "isolation": 0.05,
+        "ohm_per_meter": 0.8,
+        "max_current": 1.0,
+        "max_voltage": 5.0,
+        "min_spool": 0.0
+    },
+    {
+        "name": "kooper",
+        "diameter": 2.0,
+        "isolation": 0.05,
+        "ohm_per_meter": 0.1,
+        "max_current": 1.0,
+        "max_voltage": 5.0,
+        "min_spool": 0.0
+    }
+]
