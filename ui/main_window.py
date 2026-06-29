@@ -13,6 +13,8 @@ class CoilAppLayout(QWidget):
         self.current_lang = "NL"
         self.current_theme = "dark"
         self.nav_buttons = []
+
+        # UI must be initialized before Controller
         self.init_ui()
 
         # Link the controller
@@ -45,7 +47,7 @@ class CoilAppLayout(QWidget):
         lay_top.addStretch()
         window_layout.addWidget(self.top_bar)
 
-        # Initialiseer de losse tabbladen en geef 'self' mee als parent
+        # Initialiseer de losse tabbladen
         self.tab_prepare = PrepareTab(self)
         self.tab_preview = PreviewTab(self)
         self.tab_device = DeviceTab(self)
@@ -74,14 +76,14 @@ class CoilAppLayout(QWidget):
         self.update_ui_text()
 
     def update_ui_text(self):
-        tx = TRANSLATIONS[self.current_lang]
+        tx = TRANSLATIONS.get(self.current_lang, {})
+        if not tx: return
 
-        self.btn_nav_prepare.setText(tx["nav_prepare"])
-        self.btn_nav_preview.setText(tx["nav_preview"])
-        self.btn_nav_device.setText(tx["nav_device"])
-        self.btn_nav_settings.setText(tx["nav_settings"])
+        self.btn_nav_prepare.setText(tx.get("nav_prepare", "PREPARE"))
+        self.btn_nav_preview.setText(tx.get("nav_preview", "PREVIEW"))
+        self.btn_nav_device.setText(tx.get("nav_device", "DEVICE"))
+        self.btn_nav_settings.setText(tx.get("nav_settings", "SETTINGS"))
 
-        # Geef de vertaalopdracht door aan de losse tabs
         self.tab_prepare.retranslate_ui(tx)
         self.tab_preview.retranslate_ui(tx)
         self.tab_device.retranslate_ui(tx)

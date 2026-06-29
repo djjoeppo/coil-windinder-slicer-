@@ -1,7 +1,7 @@
 # ui/tabs/prepare_tab.py
 import os
 import json
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QFrame, QLabel, QLineEdit, QComboBox, QScrollArea, QPushButton
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QFrame, QLabel, QLineEdit, QComboBox, QScrollArea, QPushButton, QSplitter
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap, QIcon, QColor
 from core.config import TRANSLATIONS, get_resource_path
@@ -21,7 +21,7 @@ class PrepareTab(QWidget):
         # De materiaallijst cache die we inladen vanuit JSON
         self.materials_database = []
 
-        # Kleuren voor overige zaken (zoals de spoel of handmatige multi-wire selecties)
+        # Kleuren voor overige zaken
         self.wire_colors = wire_colors if wire_colors else {
             "Koper": (0.85, 0.38, 0.15), "Goud": (0.95, 0.75, 0.1), "Zilver": (0.75, 0.75, 0.75),
             "Rood": (0.85, 0.15, 0.15), "Blauw": (0.15, 0.45, 0.75), "Groen": (0.15, 0.7, 0.3),
@@ -33,15 +33,20 @@ class PrepareTab(QWidget):
         }
 
         self.init_ui()
-        self.load_materials_into_combobox() # Laad direct de data in
+        self.load_materials_into_combobox()
 
     def init_ui(self):
         lay_prepare = QHBoxLayout(self)
         lay_prepare.setContentsMargins(0, 0, 0, 0)
         lay_prepare.setSpacing(0)
 
+        # Create Splitter
+        self.splitter = QSplitter(Qt.Horizontal)
+        lay_prepare.addWidget(self.splitter)
+
         sidebar_container = QWidget()
-        sidebar_container.setFixedWidth(320)
+        sidebar_container.setMinimumWidth(250)
+        sidebar_container.setMaximumWidth(600)
         sidebar_container.setObjectName("sidebarContainer")
         sidebar_layout = QVBoxLayout(sidebar_container)
         sidebar_layout.setContentsMargins(10, 10, 10, 10)
@@ -86,7 +91,6 @@ class PrepareTab(QWidget):
         lay_card_coil.addWidget(self.sec_coil_title)
 
         self.lbl_material = QLabel()
-
         self.combo_material = QComboBox()
         self.combo_material.setFixedWidth(160)
 
@@ -152,7 +156,11 @@ class PrepareTab(QWidget):
         sidebar_layout.addWidget(self.btn_toggle_spool)
 
         self.viewer = Dummy3DViewer()
-        lay_prepare.addWidget(sidebar_container); lay_prepare.addWidget(self.viewer, 1)
+
+        # Add to splitter
+        self.splitter.addWidget(sidebar_container)
+        self.splitter.addWidget(self.viewer)
+        self.splitter.setStretchFactor(1, 1) # Viewer should grow
 
     def create_form_row(self, widget_right, text_label):
         row = QWidget(); lay = QHBoxLayout(row)
@@ -165,7 +173,6 @@ class PrepareTab(QWidget):
         return row
 
     def load_materials_into_combobox(self):
-        """Laadt pure tekst-items in de dropdown direct vanuit de JSON-file"""
         self.combo_material.blockSignals(True)
         self.combo_material.clear()
 
@@ -190,7 +197,6 @@ class PrepareTab(QWidget):
             self.input_wire_d_display.setText("0.0 mm")
 
     def on_material_dropdown_changed(self, selected_name):
-        """Zoekt het materiaal in de database en update de readonly diameter box"""
         for mat in self.materials_database:
             if mat["name"] == selected_name:
                 d = float(mat.get("diameter", 0.0))
