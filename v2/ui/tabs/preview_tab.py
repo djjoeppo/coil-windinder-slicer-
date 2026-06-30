@@ -1,5 +1,5 @@
 # ui/tabs/preview_tab.py
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QTextEdit, QLabel, QPushButton, QFileDialog, QSlider, QSplitter, QFrame
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QTextEdit, QLabel, QPushButton, QFileDialog, QSlider, QSplitter, QFrame, QLineEdit
 from PySide6.QtCore import Qt, Signal, QTimer
 from ui.viewer_3d import Coil3DViewer
 
@@ -22,6 +22,44 @@ class PreviewTab(QWidget):
 
         self.splitter = QSplitter(Qt.Horizontal)
         layout.addWidget(self.splitter)
+
+        # Left: Settings Sidebar
+        self.sidebar_left = QWidget()
+        self.sidebar_left.setMinimumWidth(250)
+        self.sidebar_left.setObjectName("sidebarContainer")
+        lay_sidebar = QVBoxLayout(self.sidebar_left)
+
+        card_params = QFrame()
+        card_params.setObjectName("sectionCard")
+        lay_card_params = QVBoxLayout(card_params)
+
+        self.lbl_sidebar_title = QLabel("MODIFIERS")
+        self.lbl_sidebar_title.setObjectName("sectionTitle")
+        lay_card_params.addWidget(self.lbl_sidebar_title)
+
+        self.lbl_z_force = QLabel("Z-axis Force (kg):")
+        self.input_z_force = QLineEdit("0.5")
+        lay_card_params.addWidget(self.create_form_row(self.input_z_force, self.lbl_z_force))
+
+        self.lbl_x_nozzle_offset = QLabel("X Nozzle Offset:")
+        self.input_x_nozzle_offset = QLineEdit("0.0")
+        lay_card_params.addWidget(self.create_form_row(self.input_x_nozzle_offset, self.lbl_x_nozzle_offset))
+
+        self.lbl_x_spool_offset = QLabel("X Spool Offset:")
+        self.input_x_spool_offset = QLineEdit("0.0")
+        lay_card_params.addWidget(self.create_form_row(self.input_x_spool_offset, self.lbl_x_spool_offset))
+
+        self.lbl_y_offset = QLabel("Y Offset:")
+        self.input_y_offset = QLineEdit("0.0")
+        lay_card_params.addWidget(self.create_form_row(self.input_y_offset, self.lbl_y_offset))
+
+        lay_sidebar.addWidget(card_params)
+
+        self.btn_generate_gcode = QPushButton("Generate G-code")
+        self.btn_generate_gcode.setObjectName("sliceActionButton")
+        lay_sidebar.addWidget(self.btn_generate_gcode)
+
+        lay_sidebar.addStretch()
 
         # Center: 3D Viewer + Timeline
         center_widget = QWidget()
@@ -81,10 +119,49 @@ class PreviewTab(QWidget):
         self.btn_save.clicked.connect(self.save_gcode)
         right_layout.addWidget(self.btn_save)
 
+        # G-code Customization (moved from settings)
+        card_gcode = QFrame()
+        card_gcode.setObjectName("sectionCard")
+        lay_card_gcode = QVBoxLayout(card_gcode)
+        lay_card_gcode.setContentsMargins(10, 10, 10, 10)
+        lay_card_gcode.setSpacing(10)
+
+        self.lbl_gcode_custom = QLabel("G-CODE CUSTOMIZATION")
+        self.lbl_gcode_custom.setObjectName("sectionTitle")
+        lay_card_gcode.addWidget(self.lbl_gcode_custom)
+
+        self.lbl_start_gcode = QLabel("Start G-code:")
+        self.txt_start_gcode = QTextEdit()
+        self.txt_start_gcode.setPlainText("G28 ; Home all axes")
+        self.txt_start_gcode.setMaximumHeight(80)
+
+        self.lbl_end_gcode = QLabel("End G-code:")
+        self.txt_end_gcode = QTextEdit()
+        self.txt_end_gcode.setPlainText("M30 ; Program end")
+        self.txt_end_gcode.setMaximumHeight(80)
+
+        lay_card_gcode.addWidget(self.lbl_start_gcode)
+        lay_card_gcode.addWidget(self.txt_start_gcode)
+        lay_card_gcode.addWidget(self.lbl_end_gcode)
+        lay_card_gcode.addWidget(self.txt_end_gcode)
+
+        right_layout.addWidget(card_gcode)
+
         # Add to splitter
+        self.splitter.addWidget(self.sidebar_left)
         self.splitter.addWidget(center_widget)
         self.splitter.addWidget(right_panel)
-        self.splitter.setStretchFactor(0, 1)
+        self.splitter.setStretchFactor(1, 1)
+
+    def create_form_row(self, widget_right, text_label):
+        row = QWidget(); lay = QHBoxLayout(row)
+        lay.setContentsMargins(0, 2, 0, 2)
+        text_label.setObjectName("formLabel")
+        widget_right.setFixedWidth(80)
+        lay.addWidget(text_label)
+        lay.addStretch()
+        lay.addWidget(widget_right)
+        return row
 
     def on_slider_changed(self, value):
         self.timeline_changed.emit(value)
@@ -122,3 +199,13 @@ class PreviewTab(QWidget):
     def retranslate_ui(self, tx):
         self.lbl_title.setText(tx.get("nav_preview", "Preview"))
         self.btn_save.setText(tx.get("btn_save_gcode", "Save G-code"))
+        self.lbl_gcode_custom.setText(tx.get("lbl_gcode_custom", "G-CODE CUSTOMIZATION"))
+        self.lbl_start_gcode.setText(tx.get("lbl_start_gcode", "Start G-code:"))
+        self.lbl_end_gcode.setText(tx.get("lbl_end_gcode", "End G-code:"))
+
+        self.lbl_sidebar_title.setText(tx.get("lbl_modifiers", "MODIFIERS"))
+        self.lbl_z_force.setText(tx.get("lbl_z_force", "Z-axis Force (kg):"))
+        self.lbl_x_nozzle_offset.setText(tx.get("lbl_x_nozzle_offset", "X Nozzle Offset:"))
+        self.lbl_x_spool_offset.setText(tx.get("lbl_x_spool_offset", "X Spool Offset:"))
+        self.lbl_y_offset.setText(tx.get("lbl_y_offset", "Y Offset:"))
+        self.btn_generate_gcode.setText(tx.get("btn_generate_gcode", "Generate G-code"))

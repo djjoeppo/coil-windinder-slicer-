@@ -54,36 +54,6 @@ class SettingsTab(QWidget):
         lay_card_viewer.addWidget(self.create_dropdown_row(self.combo_units, self.lbl_units))
         
         lay_page_settings.addWidget(card_viewer, 0, Qt.AlignHCenter | Qt.AlignTop)
-
-        # G-code Settings
-        card_gcode = QFrame()
-        card_gcode.setObjectName("sectionCard")
-        card_gcode.setFixedWidth(450)
-        lay_card_gcode = QVBoxLayout(card_gcode)
-        lay_card_gcode.setContentsMargins(20, 20, 20, 20)
-        lay_card_gcode.setSpacing(15)
-
-        self.lbl_gcode_title = QLabel("G-CODE CUSTOMIZATION")
-        self.lbl_gcode_title.setObjectName("sectionTitle")
-        lay_card_gcode.addWidget(self.lbl_gcode_title)
-
-        self.lbl_start_gcode = QLabel("Start G-code:")
-        self.txt_start_gcode = QTextEdit()
-        self.txt_start_gcode.setPlainText("G28 ; Home all axes")
-        self.txt_start_gcode.setMaximumHeight(80)
-
-        self.lbl_end_gcode = QLabel("End G-code:")
-        self.txt_end_gcode = QTextEdit()
-        self.txt_end_gcode.setPlainText("M30 ; Program end")
-        self.txt_end_gcode.setMaximumHeight(80)
-
-        lay_card_gcode.addWidget(self.lbl_start_gcode)
-        lay_card_gcode.addWidget(self.txt_start_gcode)
-        lay_card_gcode.addWidget(self.lbl_end_gcode)
-        lay_card_gcode.addWidget(self.txt_end_gcode)
-
-        lay_page_settings.addWidget(card_gcode, 0, Qt.AlignHCenter | Qt.AlignTop)
-        
         lay_page_settings.addStretch()
 
     def create_form_row(self, widget_right, text_label):
@@ -120,6 +90,3 @@ class SettingsTab(QWidget):
         self.combo_theme.blockSignals(False)
         
         self.lbl_units.setText(tx.get("lbl_units", "Units:"))
-        self.lbl_gcode_title.setText(tx.get("lbl_gcode_custom", "G-CODE CUSTOMIZATION"))
-        self.lbl_start_gcode.setText(tx.get("lbl_start_gcode", "Start G-code:"))
-        self.lbl_end_gcode.setText(tx.get("lbl_end_gcode", "End G-code:"))

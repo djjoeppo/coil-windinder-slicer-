@@ -41,6 +41,7 @@ class CoilController:
         self.tab_prepare.btn_update.clicked.connect(self.process_update)
         self.tab_prepare.btn_toggle_spool.clicked.connect(self.toggle_spool)
         self.tab_preview.timeline_changed.connect(self.update_simulation)
+        self.tab_preview.btn_generate_gcode.clicked.connect(self.process_gcode_generation)
 
     def toggle_spool(self):
         self.spool_visible = not self.spool_visible
@@ -49,47 +50,60 @@ class CoilController:
 
     def update_simulation(self, slider_value):
         """Update the 3D viewer in the Preview tab based on simulation progress."""
-        if self.last_wire_cache is None: return
+        if self.last_wire_cache is None or 'full_meshes' not in self.last_wire_cache: return
         
         progress = slider_value / 1000.0
+        full_meshes = self.last_wire_cache['full_meshes']
         pts_list = self.last_wire_cache['pts_list']
+        angles_list = self.last_wire_cache['angles_list']
         num_wires = len(pts_list)
-        v = self.last_wire_cache['params']
         
-        meshes = []
+        partial_meshes = []
+
+        # Get offsets for nozzle visualization
+        try:
+            x_nozzle_offset = float(self.tab_preview.input_x_nozzle_offset.text())
+            x_spool_offset = float(self.tab_preview.input_x_spool_offset.text())
+            y_offset = float(self.tab_preview.input_y_offset.text())
+        except ValueError:
+            x_nozzle_offset, x_spool_offset, y_offset = 0.0, 0.0, 0.0
+
         for w_idx in range(num_wires):
-            full_pts = pts_list[w_idx]
-            n_pts = len(full_pts)
+            full_mesh_data = full_meshes[w_idx]
+            n_pts = len(pts_list[w_idx])
             current_n = max(2, int(n_pts * progress))
-            wire_pts = full_pts[:current_n]
             
-            if len(wire_pts) < 2:
-                meshes.append(gl.MeshData(vertexes=np.zeros((3, 3), dtype=np.float32), faces=np.zeros((1, 3), dtype=np.uint32)))
+            if current_n < 2:
+                partial_meshes.append(gl.MeshData(vertexes=np.zeros((3, 3), dtype=np.float32), faces=np.zeros((1, 3), dtype=np.uint32)))
                 continue
-                
-            _, v_side, v_up = CoilMathEngine.calculate_mesh_vectors(wire_pts, v['t_res'], (v['w']/2)*1.002)
-            tube_res = min(int(v['t_res']), 32)
-            ang = np.linspace(0, 2*np.pi, tube_res, endpoint=False, dtype=np.float32)
-            radius = (v['w']/2)*1.002
-            cos_ang = np.cos(ang).reshape(1, tube_res, 1)
-            sin_ang = np.sin(ang).reshape(1, tube_res, 1)
-            v_side_exp = v_side.reshape(-1, 1, 3)
-            v_up_exp = v_up.reshape(-1, 1, 3)
+
+            # Pre-calculated verts are already there, we just need to slice faces
+            tube_res = int(self.last_wire_cache['params']['t_res'])
+            tube_res = min(tube_res, 32)
+            n_seg = current_n - 1
+            num_faces = n_seg * tube_res * 2
             
-            verts = wire_pts.reshape(-1, 1, 3) + radius * (cos_ang * v_side_exp + sin_ang * v_up_exp)
-            verts = verts.reshape(-1, 3)
+            sliced_faces = full_mesh_data.faces()[:num_faces]
+            partial_meshes.append(gl.MeshData(vertexes=full_mesh_data.vertexes(), faces=sliced_faces))
             
-            n_seg = len(wire_pts) - 1
-            idx1 = np.arange(n_seg * tube_res, dtype=np.uint32).reshape(n_seg, tube_res)
-            idx2 = idx1 + tube_res
-            r1_n, r2_n = np.roll(idx1, -1, axis=1), np.roll(idx2, -1, axis=1)
-            f1 = np.column_stack([idx1.ravel(), r1_n.ravel(), idx2.ravel()])
-            f2 = np.column_stack([r1_n.ravel(), r2_n.ravel(), idx2.ravel()])
-            wire_faces = np.vstack([f1, f2])
-            
-            meshes.append(gl.MeshData(vertexes=verts, faces=wire_faces))
-            
-        self.preview_viewer.render_wire_meshes(meshes)
+            # Update nozzle position based on the last point of the first wire
+            if w_idx == 0:
+                last_pt = pts_list[w_idx][current_n-1]
+                last_angle = np.degrees(angles_list[w_idx][current_n-1])
+                # In 3D: Z is spool axis (width), X/Y is radial
+                # math pts are [x, y, z] where x,y is radial and z is width.
+                # So nozzle 3D position is [last_pt[0], last_pt[1], last_pt[2]]?
+                # Actually, nozzle distance should include y_offset.
+                # Radial distance:
+                r = np.sqrt(last_pt[0]**2 + last_pt[1]**2) + y_offset
+                angle_rad = angles_list[w_idx][current_n-1]
+                nozzle_x = r * np.cos(angle_rad)
+                nozzle_y = r * np.sin(angle_rad)
+                nozzle_z = last_pt[2] + x_nozzle_offset + x_spool_offset
+
+                self.preview_viewer.update_machine_elements(last_angle, nozzle_x, nozzle_y, nozzle_z)
+
+        self.preview_viewer.render_wire_meshes(partial_meshes)
         
         # Color wires according to settings
         spool_mat = self.materials_db.get(self.tab_prepare.combo_spool_color.currentText(), self.materials_db["Standaard (Donker)"])
@@ -175,7 +189,14 @@ class CoilController:
                     meshes.append(gl.MeshData(vertexes=verts, faces=wire_faces))
                 
                 self.viewer.render_wire_meshes(meshes)
-                self.last_wire_cache = {'key': wire_key, 'length': length_m, 'pts_list': pts_list, 'angles_list': angles_list, 'params': v}
+                self.last_wire_cache = {
+                    'key': wire_key,
+                    'length': length_m,
+                    'pts_list': pts_list,
+                    'angles_list': angles_list,
+                    'params': v,
+                    'full_meshes': meshes
+                }
                 
                 # Reset simulation on new calculation
                 self.tab_preview.slider.setValue(1000)
@@ -184,19 +205,38 @@ class CoilController:
             self.viewer.update_materials(individual_wire_mats, spool_mat)
             self.preview_viewer.update_materials(individual_wire_mats, spool_mat)
             
-            if self.last_wire_cache:
-                self.gcode_engine.units = self.tab_settings.combo_units.currentText()
-                self.gcode_engine.start_gcode = self.tab_settings.txt_start_gcode.toPlainText()
-                self.gcode_engine.end_gcode = self.tab_settings.txt_end_gcode.toPlainText()
-                
-                gcode = self.gcode_engine.generate(
-                    self.last_wire_cache['pts_list'], 
-                    self.last_wire_cache['angles_list'],
-                    units=self.gcode_engine.units
-                )
-                self.tab_preview.set_gcode(gcode)
-            
         except Exception as e:
             print(f"Update error: {e}")
+            import traceback
+            traceback.print_exc()
+
+    def process_gcode_generation(self):
+        if not self.last_wire_cache:
+            print("No wire cache available. Please click calculate first.")
+            return
+
+        try:
+            self.gcode_engine.units = self.tab_settings.combo_units.currentText()
+            self.gcode_engine.start_gcode = self.tab_preview.txt_start_gcode.toPlainText()
+            self.gcode_engine.end_gcode = self.tab_preview.txt_end_gcode.toPlainText()
+
+            z_force = float(self.tab_preview.input_z_force.text())
+            x_nozzle_offset = float(self.tab_preview.input_x_nozzle_offset.text())
+            x_spool_offset = float(self.tab_preview.input_x_spool_offset.text())
+            y_offset = float(self.tab_preview.input_y_offset.text())
+
+            gcode = self.gcode_engine.generate(
+                self.last_wire_cache['pts_list'],
+                self.last_wire_cache['angles_list'],
+                nozzle_y_offset=y_offset,
+                x_nozzle_offset=x_nozzle_offset,
+                x_spool_offset=x_spool_offset,
+                z_force=z_force,
+                units=self.gcode_engine.units
+            )
+            self.tab_preview.set_gcode(gcode)
+            print("G-code generated successfully.")
+        except Exception as e:
+            print(f"G-code generation error: {e}")
             import traceback
             traceback.print_exc()
