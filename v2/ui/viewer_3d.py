@@ -86,22 +86,6 @@ class Coil3DViewer(gl.GLViewWidget):
         self.nozzle.setColor((0.8, 0.8, 0.8, 1.0))
         self.addItem(self.nozzle)
 
-        # X-axis (Width axis)
-        x_axis_md = gl.MeshData.cylinder(rows=1, cols=4, radius=[2, 2], length=200)
-        self.x_axis = CustomGLMeshItem(meshdata=x_axis_md, smooth=False, shader="shaded")
-        self.x_axis.setColor((0.3, 0.3, 0.3, 1.0))
-        self.addItem(self.x_axis)
-        self.x_axis.rotate(90, 0, 1, 0) # Align with X
-        self.x_axis.translate(-100, 0, -20)
-
-        # Y-axis (Radial axis)
-        y_axis_md = gl.MeshData.cylinder(rows=1, cols=4, radius=[2, 2], length=100)
-        self.y_axis = CustomGLMeshItem(meshdata=y_axis_md, smooth=False, shader="shaded")
-        self.y_axis.setColor((0.4, 0.4, 0.4, 1.0))
-        self.addItem(self.y_axis)
-        self.y_axis.rotate(90, 1, 0, 0) # Align with Y
-        self.y_axis.translate(0, 50, -20)
-
         self.wire_items = []
 
     def update_machine_elements(self, a_rot_deg, x_pos, y_pos, z_pos):

@@ -10,11 +10,11 @@ class PreviewTab(QWidget):
         super().__init__(main_window)
         self.main_window = main_window
         self.init_ui()
-        
+
         self.timer = QTimer()
         self.timer.setInterval(50)
         self.timer.timeout.connect(self.animate)
-        
+
     def init_ui(self):
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -59,6 +59,10 @@ class PreviewTab(QWidget):
         self.btn_generate_gcode.setObjectName("sliceActionButton")
         lay_sidebar.addWidget(self.btn_generate_gcode)
 
+        self.btn_machine_limits = QPushButton("Machine Limieten")
+        self.btn_machine_limits.setObjectName("secondaryActionButton")
+        lay_sidebar.addWidget(self.btn_machine_limits)
+
         lay_sidebar.addStretch()
 
         # Center: 3D Viewer + Timeline
@@ -99,7 +103,7 @@ class PreviewTab(QWidget):
         self.lbl_title = QLabel("G-code Preview")
         self.lbl_title.setObjectName("sectionTitle")
         right_layout.addWidget(self.lbl_title)
-        
+
         self.gcode_display = QTextEdit()
         self.gcode_display.setReadOnly(True)
         self.gcode_display.setLineWrapMode(QTextEdit.NoWrap)
@@ -185,12 +189,12 @@ class PreviewTab(QWidget):
 
     def set_gcode(self, gcode):
         self.gcode_display.setPlainText(gcode)
-        
+
     def save_gcode(self):
         gcode = self.gcode_display.toPlainText()
         if not gcode:
             return
-            
+
         path, _ = QFileDialog.getSaveFileName(self, "Save G-code", "", "G-code files (*.gcode);;Text files (*.txt)")
         if path:
             with open(path, "w", encoding="utf-8") as f:
@@ -209,3 +213,4 @@ class PreviewTab(QWidget):
         self.lbl_x_spool_offset.setText(tx.get("lbl_x_spool_offset", "X Spool Offset:"))
         self.lbl_y_offset.setText(tx.get("lbl_y_offset", "Y Offset:"))
         self.btn_generate_gcode.setText(tx.get("btn_generate_gcode", "Generate G-code"))
+        self.btn_machine_limits.setText(tx.get("btn_machine_limits", "Machine Limieten"))

@@ -2,10 +2,65 @@
 import os
 import json
 from PySide6.QtWidgets import (QDialog, QHBoxLayout, QVBoxLayout, QWidget, QFrame,
-                             QListWidget, QListWidgetItem, QLabel, QLineEdit, QPushButton)
+                             QListWidget, QListWidgetItem, QLabel, QLineEdit, QPushButton, QGridLayout)
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QDoubleValidator
 from core.config import TRANSLATIONS, get_resource_path
+
+class MachineLimitsDialog(QDialog):
+    def __init__(self, parent=None, current_limits=None):
+        super().__init__(parent)
+        self.setWindowTitle("Machine Limieten")
+        self.setFixedWidth(350)
+        self.limits = current_limits or {
+            "max_x": 200.0,
+            "max_y": 100.0,
+            "max_z": 15.0,
+            "max_z_force": 10.0
+        }
+        self.init_ui()
+
+    def init_ui(self):
+        layout = QVBoxLayout(self)
+
+        grid = QGridLayout()
+        layout.addLayout(grid)
+
+        self.inputs = {}
+
+        fields = [
+            ("max_x", "Maximale travel X (mm):"),
+            ("max_y", "Maximale travel Y (mm):"),
+            ("max_z", "Maximale travel Z (mm):"),
+            ("max_z_force", "Maximale Z-kracht (kg):")
+        ]
+
+        for i, (key, label) in enumerate(fields):
+            lbl = QLabel(label)
+            edit = QLineEdit(str(self.limits[key]))
+            grid.addWidget(lbl, i, 0)
+            grid.addWidget(edit, i, 1)
+            self.inputs[key] = edit
+
+        btn_layout = QHBoxLayout()
+        self.btn_save = QPushButton("Opslaan")
+        self.btn_save.clicked.connect(self.accept)
+        self.btn_cancel = QPushButton("Annuleren")
+        self.btn_cancel.clicked.connect(self.reject)
+        btn_layout.addWidget(self.btn_save)
+        btn_layout.addWidget(self.btn_cancel)
+        layout.addLayout(btn_layout)
+
+    def get_values(self):
+        try:
+            return {
+                "max_x": float(self.inputs["max_x"].text().replace(',', '.')),
+                "max_y": float(self.inputs["max_y"].text().replace(',', '.')),
+                "max_z": float(self.inputs["max_z"].text().replace(',', '.')),
+                "max_z_force": float(self.inputs["max_z_force"].text().replace(',', '.'))
+            }
+        except ValueError:
+            return self.limits
 
 class MaterialsPopUp(QDialog):
     """Het pop-up scherm voor uitgebreid Materialenbeheer met JSON-koppeling"""
