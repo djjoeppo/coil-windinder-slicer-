@@ -41,23 +41,7 @@ class PreviewTab(QWidget):
         self.input_z_force = QLineEdit("0.5")
         lay_card_params.addWidget(self.create_form_row(self.input_z_force, self.lbl_z_force))
 
-        self.lbl_x_nozzle_offset = QLabel("X Nozzle Offset:")
-        self.input_x_nozzle_offset = QLineEdit("0.0")
-        lay_card_params.addWidget(self.create_form_row(self.input_x_nozzle_offset, self.lbl_x_nozzle_offset))
-
-        self.lbl_x_spool_offset = QLabel("X Spool Offset:")
-        self.input_x_spool_offset = QLineEdit("0.0")
-        lay_card_params.addWidget(self.create_form_row(self.input_x_spool_offset, self.lbl_x_spool_offset))
-
-        self.lbl_y_offset = QLabel("Y Offset:")
-        self.input_y_offset = QLineEdit("0.0")
-        lay_card_params.addWidget(self.create_form_row(self.input_y_offset, self.lbl_y_offset))
-
         lay_sidebar.addWidget(card_params)
-
-        self.btn_generate_gcode = QPushButton("Generate G-code")
-        self.btn_generate_gcode.setObjectName("sliceActionButton")
-        lay_sidebar.addWidget(self.btn_generate_gcode)
 
         self.btn_machine_limits = QPushButton("Machine Limieten")
         self.btn_machine_limits.setObjectName("secondaryActionButton")
@@ -100,6 +84,54 @@ class PreviewTab(QWidget):
         right_layout = QVBoxLayout(right_panel)
         right_layout.setContentsMargins(10, 10, 10, 10)
 
+        # Machine Settings Card
+        card_machine = QFrame()
+        card_machine.setObjectName("sectionCard")
+        lay_card_machine = QVBoxLayout(card_machine)
+        lay_card_machine.setContentsMargins(10, 10, 10, 10)
+        lay_card_machine.setSpacing(8)
+
+        self.lbl_machine_title = QLabel("MACHINE SETTINGS")
+        self.lbl_machine_title.setObjectName("sectionTitle")
+        lay_card_machine.addWidget(self.lbl_machine_title)
+
+        self.lbl_feedrate = QLabel("Windsnelheid (Feedrate F):")
+        self.input_feedrate = QLineEdit("500")
+        lay_card_machine.addWidget(self.create_form_row(self.input_feedrate, self.lbl_feedrate))
+
+        self.lbl_wire_offset = QLabel("Draad Offset (mm):")
+        self.input_wire_offset = QLineEdit("0.0")
+        lay_card_machine.addWidget(self.create_form_row(self.input_wire_offset, self.lbl_wire_offset))
+
+        self.lbl_spool_offset = QLabel("Spoel X-Offset (mm):")
+        self.input_spool_offset = QLineEdit("0.0")
+        lay_card_machine.addWidget(self.create_form_row(self.input_spool_offset, self.lbl_spool_offset))
+
+        self.lbl_y_offset = QLabel("Y Offset:")
+        self.input_y_offset = QLineEdit("0.0")
+        lay_card_machine.addWidget(self.create_form_row(self.input_y_offset, self.lbl_y_offset))
+
+        self.lbl_start_gcode = QLabel("Start G-code:")
+        self.txt_start_gcode = QTextEdit()
+        self.txt_start_gcode.setPlainText("G28 ; Home all axes")
+        self.txt_start_gcode.setMaximumHeight(60)
+        lay_card_machine.addWidget(self.lbl_start_gcode)
+        lay_card_machine.addWidget(self.txt_start_gcode)
+
+        self.lbl_end_gcode = QLabel("End G-code:")
+        self.txt_end_gcode = QTextEdit()
+        self.txt_end_gcode.setPlainText("M30 ; Program end")
+        self.txt_end_gcode.setMaximumHeight(60)
+        lay_card_machine.addWidget(self.lbl_end_gcode)
+        lay_card_machine.addWidget(self.txt_end_gcode)
+
+        self.btn_update_gcode = QPushButton("Update G-Code & Offsets")
+        self.btn_update_gcode.setObjectName("sliceActionButton")
+        lay_card_machine.addWidget(self.btn_update_gcode)
+
+        right_layout.addWidget(card_machine)
+
+        # G-code Display
         self.lbl_title = QLabel("G-code Preview")
         self.lbl_title.setObjectName("sectionTitle")
         right_layout.addWidget(self.lbl_title)
@@ -119,37 +151,9 @@ class PreviewTab(QWidget):
         right_layout.addWidget(self.gcode_display)
 
         self.btn_save = QPushButton("Save G-code")
-        self.btn_save.setObjectName("sliceActionButton")
+        self.btn_save.setObjectName("secondaryActionButton")
         self.btn_save.clicked.connect(self.save_gcode)
         right_layout.addWidget(self.btn_save)
-
-        # G-code Customization (moved from settings)
-        card_gcode = QFrame()
-        card_gcode.setObjectName("sectionCard")
-        lay_card_gcode = QVBoxLayout(card_gcode)
-        lay_card_gcode.setContentsMargins(10, 10, 10, 10)
-        lay_card_gcode.setSpacing(10)
-
-        self.lbl_gcode_custom = QLabel("G-CODE CUSTOMIZATION")
-        self.lbl_gcode_custom.setObjectName("sectionTitle")
-        lay_card_gcode.addWidget(self.lbl_gcode_custom)
-
-        self.lbl_start_gcode = QLabel("Start G-code:")
-        self.txt_start_gcode = QTextEdit()
-        self.txt_start_gcode.setPlainText("G28 ; Home all axes")
-        self.txt_start_gcode.setMaximumHeight(80)
-
-        self.lbl_end_gcode = QLabel("End G-code:")
-        self.txt_end_gcode = QTextEdit()
-        self.txt_end_gcode.setPlainText("M30 ; Program end")
-        self.txt_end_gcode.setMaximumHeight(80)
-
-        lay_card_gcode.addWidget(self.lbl_start_gcode)
-        lay_card_gcode.addWidget(self.txt_start_gcode)
-        lay_card_gcode.addWidget(self.lbl_end_gcode)
-        lay_card_gcode.addWidget(self.txt_end_gcode)
-
-        right_layout.addWidget(card_gcode)
 
         # Add to splitter
         self.splitter.addWidget(self.sidebar_left)
@@ -203,14 +207,16 @@ class PreviewTab(QWidget):
     def retranslate_ui(self, tx):
         self.lbl_title.setText(tx.get("nav_preview", "Preview"))
         self.btn_save.setText(tx.get("btn_save_gcode", "Save G-code"))
-        self.lbl_gcode_custom.setText(tx.get("lbl_gcode_custom", "G-CODE CUSTOMIZATION"))
         self.lbl_start_gcode.setText(tx.get("lbl_start_gcode", "Start G-code:"))
         self.lbl_end_gcode.setText(tx.get("lbl_end_gcode", "End G-code:"))
 
         self.lbl_sidebar_title.setText(tx.get("lbl_modifiers", "MODIFIERS"))
         self.lbl_z_force.setText(tx.get("lbl_z_force", "Z-axis Force (kg):"))
-        self.lbl_x_nozzle_offset.setText(tx.get("lbl_x_nozzle_offset", "X Nozzle Offset:"))
-        self.lbl_x_spool_offset.setText(tx.get("lbl_x_spool_offset", "X Spool Offset:"))
-        self.lbl_y_offset.setText(tx.get("lbl_y_offset", "Y Offset:"))
-        self.btn_generate_gcode.setText(tx.get("btn_generate_gcode", "Generate G-code"))
         self.btn_machine_limits.setText(tx.get("btn_machine_limits", "Machine Limieten"))
+
+        self.lbl_machine_title.setText(tx.get("lbl_machine_settings", "MACHINE SETTINGS"))
+        self.lbl_feedrate.setText(tx.get("lbl_feedrate", "Windsnelheid (Feedrate F):"))
+        self.lbl_wire_offset.setText(tx.get("lbl_wire_offset", "Draad Offset (mm):"))
+        self.lbl_spool_offset.setText(tx.get("lbl_spool_offset", "Spoel X-Offset (mm):"))
+        self.lbl_y_offset.setText(tx.get("lbl_y_offset", "Y Offset:"))
+        self.btn_update_gcode.setText(tx.get("btn_update_gcode", "Update G-Code & Offsets"))

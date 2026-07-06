@@ -17,6 +17,10 @@ class CoilController:
         self.viewer = self.tab_prepare.viewer
         self.preview_viewer = self.tab_preview.viewer
 
+        # Ensure nozzle tracker is only visible in the Preview tab
+        self.viewer.set_machine_visibility(False)
+        self.preview_viewer.set_machine_visibility(True)
+
         self.gcode_engine = GCodeEngine()
 
         self.last_wire_cache = None
@@ -44,7 +48,7 @@ class CoilController:
         self.tab_prepare.btn_update.clicked.connect(self.process_update)
         self.tab_prepare.btn_toggle_spool.clicked.connect(self.toggle_spool)
         self.tab_preview.timeline_changed.connect(self.update_simulation)
-        self.tab_preview.btn_generate_gcode.clicked.connect(self.process_gcode_generation)
+        self.tab_preview.btn_update_gcode.clicked.connect(self.process_gcode_generation)
         self.tab_preview.btn_machine_limits.clicked.connect(self.open_machine_limits)
 
         self.machine_limits = {
@@ -74,13 +78,13 @@ class CoilController:
 
         partial_meshes = []
 
-        # Get offsets for nozzle visualization
+        # Get offsets for nozzle visualization (Phase 2)
         try:
-            x_nozzle_offset = float(self.tab_preview.input_x_nozzle_offset.text())
-            x_spool_offset = float(self.tab_preview.input_x_spool_offset.text())
+            wire_offset = float(self.tab_preview.input_wire_offset.text())
+            spool_offset = float(self.tab_preview.input_spool_offset.text())
             y_offset = float(self.tab_preview.input_y_offset.text())
         except ValueError:
-            x_nozzle_offset, x_spool_offset, y_offset = 0.0, 0.0, 0.0
+            wire_offset, spool_offset, y_offset = 0.0, 0.0, 0.0
 
         for w_idx in range(num_wires):
             full_mesh_data = full_meshes[w_idx]
@@ -109,7 +113,7 @@ class CoilController:
                 angle_rad = angles_list[w_idx][idx]
                 nozzle_x = r * np.cos(angle_rad)
                 nozzle_y = r * np.sin(angle_rad)
-                nozzle_z = last_pt[2] + x_nozzle_offset + x_spool_offset
+                nozzle_z = last_pt[2] + wire_offset + spool_offset
 
                 self.preview_viewer.update_machine_elements(last_angle, nozzle_x, nozzle_y, nozzle_z)
 
@@ -227,13 +231,14 @@ class CoilController:
 
         try:
             z_force = float(self.tab_preview.input_z_force.text())
-            x_nozzle_offset = float(self.tab_preview.input_x_nozzle_offset.text())
-            x_spool_offset = float(self.tab_preview.input_x_spool_offset.text())
+            wire_offset = float(self.tab_preview.input_wire_offset.text())
+            spool_offset = float(self.tab_preview.input_spool_offset.text())
             y_offset = float(self.tab_preview.input_y_offset.text())
+            feedrate = float(self.tab_preview.input_feedrate.text())
 
             # Validation
             pts = self.last_wire_cache['pts_list'][0]
-            max_x_calc = np.max(np.abs(pts[:, 2] + x_nozzle_offset + x_spool_offset))
+            max_x_calc = np.max(np.abs(pts[:, 2] + wire_offset + spool_offset))
             max_y_calc = np.max(np.sqrt(pts[:, 0]**2 + pts[:, 1]**2) + y_offset)
 
             error_msgs = []
@@ -256,9 +261,10 @@ class CoilController:
                 self.last_wire_cache['pts_list'],
                 self.last_wire_cache['angles_list'],
                 nozzle_y_offset=y_offset,
-                x_nozzle_offset=x_nozzle_offset,
-                x_spool_offset=x_spool_offset,
+                wire_offset=wire_offset,
+                spool_offset=spool_offset,
                 z_force=z_force,
+                feedrate=feedrate,
                 units=self.gcode_engine.units
             )
             self.tab_preview.set_gcode(gcode)

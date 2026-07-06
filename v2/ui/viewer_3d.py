@@ -80,10 +80,8 @@ class Coil3DViewer(gl.GLViewWidget):
         self.addItem(self.flange_r)
 
         # Machine Components
-        # Nozzle
-        nozzle_md = gl.MeshData.cylinder(rows=10, cols=20, radius=[1, 0.5], length=10)
-        self.nozzle = CustomGLMeshItem(meshdata=nozzle_md, smooth=True, shader="shaded")
-        self.nozzle.setColor((0.8, 0.8, 0.8, 1.0))
+        # Nozzle (using GLBoxItem for the tracker as requested)
+        self.nozzle = gl.GLBoxItem(size=np.array([2, 2, 5], dtype=np.float32), color=(1, 0, 0, 1))
         self.addItem(self.nozzle)
 
         self.wire_items = []
@@ -189,3 +187,6 @@ class Coil3DViewer(gl.GLViewWidget):
         self.hub.setVisible(visible)
         self.flange_l.setVisible(visible)
         self.flange_r.setVisible(visible)
+
+    def set_machine_visibility(self, visible: bool):
+        self.nozzle.setVisible(visible)

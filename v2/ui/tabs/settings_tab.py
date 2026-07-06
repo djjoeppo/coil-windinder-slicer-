@@ -76,16 +76,16 @@ class SettingsTab(QWidget):
     def retranslate_ui(self, tx):
         curr_theme_idx = self.combo_theme.currentIndex() if self.combo_theme.count() > 0 else 0
         
-        self.sec_settings_title.setText(tx["sec_settings"])
-        self.lbl_t_res.setText(tx["lbl_t_res"])
-        self.lbl_p_res.setText(tx["lbl_p_res"])
-        self.lbl_theme.setText(tx["lbl_theme"])
-        self.lbl_lang.setText(tx["lbl_lang"])
+        self.sec_settings_title.setText(tx.get("sec_settings", "Viewer Settings"))
+        self.lbl_t_res.setText(tx.get("lbl_t_res", "Tube Resolution:"))
+        self.lbl_p_res.setText(tx.get("lbl_p_res", "Path Resolution:"))
+        self.lbl_theme.setText(tx.get("lbl_theme", "Theme:"))
+        self.lbl_lang.setText(tx.get("lbl_lang", "Language:"))
         
         self.combo_theme.blockSignals(True)
         self.combo_theme.clear()
-        self.combo_theme.addItem(tx["theme_dark"])
-        self.combo_theme.addItem(tx["theme_light"])
+        self.combo_theme.addItem(tx.get("theme_dark", "Dark Mode"))
+        self.combo_theme.addItem(tx.get("theme_light", "Light Mode"))
         self.combo_theme.setCurrentIndex(curr_theme_idx if curr_theme_idx >= 0 else 0)
         self.combo_theme.blockSignals(False)
         

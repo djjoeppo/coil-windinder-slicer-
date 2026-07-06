@@ -8,7 +8,8 @@ class GCodeEngine:
         self.end_gcode = "M30 ; Program end"
         self.units = "mm" 
 
-    def generate(self, pts_list, angles_list, nozzle_y_offset=0.0, x_nozzle_offset=0.0, x_spool_offset=0.0, z_force=0.5, feedrate=500, units="mm"):
+    def generate(self, pts_list, angles_list, nozzle_y_offset=0.0, wire_offset=0.0, spool_offset=0.0, z_force=0.5, feedrate=500, units="mm"):
+        """Generates G-code based on simulation paths and machine offsets (Phase 2)."""
         if not pts_list or not angles_list:
             return ""
             
@@ -32,11 +33,14 @@ class GCodeEngine:
         pts = pts_list[0]
         angles = angles_list[0]
         
-        # Convert to degrees
+        # Convert to degrees for machine A-axis (spool rotation)
         a_axis = np.degrees(angles)
-        # X in machine = math_z + x_nozzle_offset + x_spool_offset
-        x_axis = pts[:, 2] + x_nozzle_offset + x_spool_offset
-        # Y in machine = radial_dist + y_offset
+
+        # X-axis (traverse) = math_z + spool_offset + wire_offset
+        # math_z is the position along the width of the spool from the path calculation.
+        x_axis = pts[:, 2] + spool_offset + wire_offset
+
+        # Y-axis (nozzle distance) = radial_dist + y_offset
         y_axis = np.sqrt(pts[:, 0]**2 + pts[:, 1]**2) + nozzle_y_offset
         
         # Start position
