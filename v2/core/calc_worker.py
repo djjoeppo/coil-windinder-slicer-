@@ -62,7 +62,11 @@ class CalculationWorker(QThread):
                 f2 = np.column_stack([r1_n.ravel(), r2_n.ravel(), idx2.ravel()])
                 wire_faces = np.vstack([f1, f2])
 
-                meshes.append(gl.MeshData(vertexes=verts, faces=wire_faces, vertexNormals=normals))
+                # Bolt Optimization: Manually assign pre-calculated normals to avoid pyqtgraph compute overhead
+                # and constructor keyword limitations.
+                md = gl.MeshData(vertexes=verts, faces=wire_faces)
+                md._vertexNormals = normals
+                meshes.append(md)
 
                 prog_val = 40 + int((w_idx + 1) / num_wires * 50)
                 self.progress.emit(prog_val)
