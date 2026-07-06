@@ -17,7 +17,7 @@ class CoilAppLayout(QWidget):
         # UI must be initialized before Controller
         self.init_ui()
         
-        # Link the controller
+        # Link the controller (Audit: Ensuring all widgets exist before controller binds)
         self.controller = CoilController(self)
 
     def init_ui(self):

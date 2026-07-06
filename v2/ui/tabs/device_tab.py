@@ -152,7 +152,8 @@ class DeviceTab(QWidget):
         self.btn_send.setEnabled(True)
 
     def send_gcode(self):
-        gcode = self.main_window.tab_preview.gcode_display.toPlainText()
+        # Phase 4: Pull live G-code via the controller's sync method
+        gcode = self.main_window.controller.get_gcode()
         if not gcode:
             self.terminal.append("Error: No G-code to send")
             return

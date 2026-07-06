@@ -275,3 +275,7 @@ class CoilController:
             print(f"G-code generation error: {e}")
             import traceback
             traceback.print_exc()
+
+    def get_gcode(self):
+        """Phase 4: Safely retrieve the live G-code from the UI (Live Sync)."""
+        return self.tab_preview.gcode_display.toPlainText()
