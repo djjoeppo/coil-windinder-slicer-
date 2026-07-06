@@ -59,7 +59,6 @@ class CustomGLMeshItem(gl.GLMeshItem):
             # Ultiem vangnet: Als pyqtgraph intern alsnog struikelt over vertex attributen,
             # dwingen we OpenGL hier handmatig naar de juiste kleurmodus.
             GL.glColor4f(*c_flat)
-            super().paint()
 
 
 class Coil3DViewer(gl.GLViewWidget):
@@ -80,8 +79,19 @@ class Coil3DViewer(gl.GLViewWidget):
         self.addItem(self.flange_r)
 
         # Machine Components
-        # Nozzle (using GLBoxItem for the tracker as requested)
-        self.nozzle = gl.GLBoxItem(size=np.array([2, 2, 5], dtype=np.float32), color=(1, 0, 0, 1))
+        # Nozzle tracker: Custom mesh-based cube to avoid gl.GLBoxItem numpy attribute bugs
+        verts = np.array([
+            [0,0,0], [1,0,0], [1,1,0], [0,1,0],
+            [0,0,1], [1,0,1], [1,1,1], [0,1,1]
+        ], dtype=np.float32)
+        faces = np.array([
+            [0,1,2], [0,2,3], [0,1,5], [0,5,4], [1,2,6], [1,6,5],
+            [2,3,7], [2,7,6], [3,0,4], [3,4,7], [4,5,6], [4,6,7]
+        ], dtype=np.uint32)
+        nozzle_md = gl.MeshData(vertexes=verts, faces=faces)
+        self.nozzle = CustomGLMeshItem(meshdata=nozzle_md, smooth=False, shader="shaded")
+        self.nozzle.scale(2, 2, 5)
+        self.nozzle.setColor((1, 0, 0, 1))
         self.addItem(self.nozzle)
 
         self.wire_items = []
