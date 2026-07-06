@@ -4,8 +4,8 @@ import json
 
 def get_resource_path(filename):
     """Get the absolute path to a resource in the assets directory."""
-    # Assuming this file is in core/ and assets/ is in the root
-    base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    # Robustly resolve path to v2/ directory
+    base_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     return os.path.join(base_path, "assets", filename)
 
 def load_json(filename):

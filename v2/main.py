@@ -10,18 +10,22 @@ from PySide6.QtGui import QSurfaceFormat
 
 def pre_flight_check():
     """Phase 4: Verify critical assets and environment before startup."""
-    base_dir = os.path.dirname(os.path.abspath(__file__))
+    # Use realpath to resolve any symlinks or relative paths robustly
+    base_dir = os.path.dirname(os.path.realpath(__file__))
+
     critical_files = [
-        os.path.join(base_dir, "assets/languages.json"),
-        os.path.join(base_dir, "assets/materials.json"),
-        os.path.join(base_dir, "assets/machine_settings.json")
+        os.path.join(base_dir, "assets", "languages.json"),
+        os.path.join(base_dir, "assets", "materials.json"),
+        os.path.join(base_dir, "assets", "machine_settings.json")
     ]
 
     missing = [f for f in critical_files if not os.path.exists(f)]
     if missing:
-        # Show only relative path for readability in dialog
+        # Show relative path and base search directory for better user diagnostics
         rel_missing = [os.path.relpath(f, base_dir) for f in missing]
-        raise FileNotFoundError(f"Kritieke bestanden ontbreken: {', '.join(rel_missing)}")
+        raise FileNotFoundError(
+            f"Kritieke bestanden ontbreken in {base_dir}:\n{', '.join(rel_missing)}"
+        )
 
     # Check for basic dependencies (NumPy is critical for math)
     try:
