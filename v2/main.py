@@ -1,6 +1,12 @@
 # main.py
 import sys
 import os
+from pathlib import Path
+
+# Phase 4: Ensure the application root is in sys.path for reliable module resolution
+app_root = Path(__file__).resolve().parent
+if str(app_root) not in sys.path:
+    sys.path.insert(0, str(app_root))
 
 # Set some environment variables that might speed up startup or improve compatibility
 os.environ["QSG_RHI_BACKEND"] = "opengl"
@@ -10,21 +16,22 @@ from PySide6.QtGui import QSurfaceFormat
 
 def pre_flight_check():
     """Phase 4: Verify critical assets and environment before startup."""
-    # Use realpath to resolve any symlinks or relative paths robustly
-    base_dir = os.path.dirname(os.path.realpath(__file__))
+    # Robust asset discovery (Bolt optimization)
+    base_dir = Path(__file__).resolve().parent
+    assets_dir = base_dir / "assets"
 
-    critical_files = [
-        os.path.join(base_dir, "assets", "languages.json"),
-        os.path.join(base_dir, "assets", "materials.json"),
-        os.path.join(base_dir, "assets", "machine_settings.json")
-    ]
+    # Fallback search for assets (e.g., if running from a different directory)
+    if not assets_dir.exists():
+        assets_dir = Path.cwd() / "v2" / "assets"
+        if not assets_dir.exists():
+             assets_dir = Path.cwd() / "assets"
 
-    missing = [f for f in critical_files if not os.path.exists(f)]
+    critical_files = ["languages.json", "materials.json", "machine_settings.json"]
+    missing = [f for f in critical_files if not (assets_dir / f).exists()]
+
     if missing:
-        # Show relative path and base search directory for better user diagnostics
-        rel_missing = [os.path.relpath(f, base_dir) for f in missing]
         raise FileNotFoundError(
-            f"Kritieke bestanden ontbreken in {base_dir}:\n{', '.join(rel_missing)}"
+            f"Kritieke bestanden ontbreken in {assets_dir.resolve()}:\n{', '.join(missing)}"
         )
 
     # Check for basic dependencies (NumPy is critical for math)

@@ -1,12 +1,21 @@
 # core/config.py
 import os
 import json
+from pathlib import Path
 
 def get_resource_path(filename):
     """Get the absolute path to a resource in the assets directory."""
-    # Robustly resolve path to v2/ directory
-    base_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-    return os.path.join(base_path, "assets", filename)
+    # Robustly resolve assets folder location (Bolt optimization)
+    base_dir = Path(__file__).resolve().parent.parent
+    assets_dir = base_dir / "assets"
+
+    # Fallback search
+    if not assets_dir.exists():
+        assets_dir = Path.cwd() / "v2" / "assets"
+        if not assets_dir.exists():
+             assets_dir = Path.cwd() / "assets"
+
+    return str(assets_dir / filename)
 
 def load_json(filename):
     path = get_resource_path(filename)
