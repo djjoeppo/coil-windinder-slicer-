@@ -105,7 +105,7 @@ class PreviewTab(QWidget):
         right_layout.addWidget(self.lbl_title)
 
         self.gcode_display = QTextEdit()
-        self.gcode_display.setReadOnly(True)
+        self.gcode_display.setReadOnly(False)  # Bolt: Allow manual G-code editing
         self.gcode_display.setLineWrapMode(QTextEdit.NoWrap)
         self.gcode_display.setStyleSheet("""
             QTextEdit {

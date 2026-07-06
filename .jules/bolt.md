@@ -1,0 +1,3 @@
+## 2025-05-22 - [Performance Optimization of Coil Simulation]
+**Learning:** In PySide6 applications using `pyqtgraph.opengl`, recreating `GLMeshItem` or even `MeshData` objects during high-frequency updates (like simulation scrubbing) causes significant GC pressure and frame drops. Reusing vertex arrays and only slicing face indices provides a "zero-copy" style update that maintains high frame rates. Vectorizing geometry calculations with NumPy (e.g., using `np.cross` on entire arrays instead of looping) is essential for responsiveness when handling coil paths with >10,000 points.
+**Action:** Always prefer updating existing mesh items via `setMeshData` and use NumPy's vectorized operations for any 3D point manipulations to avoid blocking the UI thread.

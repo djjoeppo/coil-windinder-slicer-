@@ -63,7 +63,7 @@ class CoilController:
         self.preview_viewer.set_spool_visibility(self.spool_visible)
 
     def update_simulation(self, slider_value):
-        """Update the 3D viewer in the Preview tab based on simulation progress."""
+        """Update the 3D viewer in the Preview tab based on simulation progress (Bolt optimized)."""
         if self.last_wire_cache is None or 'full_meshes' not in self.last_wire_cache: return
 
         progress = slider_value / 1000.0
@@ -87,30 +87,26 @@ class CoilController:
             n_pts = len(pts_list[w_idx])
             current_n = max(2, int(n_pts * progress))
 
-            if current_n < 2:
-                partial_meshes.append(gl.MeshData(vertexes=np.zeros((3, 3), dtype=np.float32), faces=np.zeros((1, 3), dtype=np.uint32)))
-                continue
-
-            # Pre-calculated verts are already there, we just need to slice faces
+            # Bolt optimization: reuse existing MeshData's vertexes and slice faces
+            # instead of creating completely new MeshData objects with vertex copies.
             tube_res = int(self.last_wire_cache['params']['t_res'])
             tube_res = min(tube_res, 32)
             n_seg = current_n - 1
             num_faces = n_seg * tube_res * 2
 
+            # Use raw faces from the full mesh for zero-copy slicing performance
             sliced_faces = full_mesh_data.faces()[:num_faces]
             partial_meshes.append(gl.MeshData(vertexes=full_mesh_data.vertexes(), faces=sliced_faces))
 
             # Update nozzle position based on the last point of the first wire
             if w_idx == 0:
-                last_pt = pts_list[w_idx][current_n-1]
-                last_angle = np.degrees(angles_list[w_idx][current_n-1])
-                # In 3D: Z is spool axis (width), X/Y is radial
-                # math pts are [x, y, z] where x,y is radial and z is width.
-                # So nozzle 3D position is [last_pt[0], last_pt[1], last_pt[2]]?
-                # Actually, nozzle distance should include y_offset.
-                # Radial distance:
+                idx = current_n - 1
+                last_pt = pts_list[w_idx][idx]
+                last_angle = np.degrees(angles_list[w_idx][idx])
+
+                # Radial distance calculation
                 r = np.sqrt(last_pt[0]**2 + last_pt[1]**2) + y_offset
-                angle_rad = angles_list[w_idx][current_n-1]
+                angle_rad = angles_list[w_idx][idx]
                 nozzle_x = r * np.cos(angle_rad)
                 nozzle_y = r * np.sin(angle_rad)
                 nozzle_z = last_pt[2] + x_nozzle_offset + x_spool_offset

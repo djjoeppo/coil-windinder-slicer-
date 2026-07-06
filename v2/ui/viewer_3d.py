@@ -155,15 +155,22 @@ class Coil3DViewer(gl.GLViewWidget):
         self.flange_r.setMeshData(meshdata=_make_flange(width, 3))
 
     def render_wire_meshes(self, meshes_data):
-        for item in self.wire_items:
-            self.removeItem(item)
-        self.wire_items.clear()
+        """Render wire meshes efficiently by reusing items when possible (Bolt optimization)."""
+        # If number of meshes changed, we reset
+        if len(meshes_data) != len(self.wire_items):
+            for item in self.wire_items:
+                self.removeItem(item)
+            self.wire_items.clear()
 
-        for mesh_data in meshes_data:
-            item = CustomGLMeshItem(meshdata=mesh_data, smooth=True, shader='shaded')
-            item.setGLOptions('opaque')
-            self.addItem(item)
-            self.wire_items.append(item)
+            for mesh_data in meshes_data:
+                item = CustomGLMeshItem(meshdata=mesh_data, smooth=True, shader='shaded')
+                item.setGLOptions('opaque')
+                self.addItem(item)
+                self.wire_items.append(item)
+        else:
+            # Update existing items' mesh data
+            for idx, mesh_data in enumerate(meshes_data):
+                self.wire_items[idx].setMeshData(meshdata=mesh_data)
 
     def update_materials(self, wire_materials, spool_material):
         for part in [self.hub, self.flange_l, self.flange_r]:

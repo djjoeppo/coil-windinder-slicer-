@@ -69,6 +69,7 @@ class CoilMathEngine:
     @staticmethod
     def calculate_mesh_vectors(wire_pts, tube_res, visual_r):
         """Helper om vectoren (tangents, side, up) te berekenen voor 3D mesh."""
+        # Vectorized calculation for performance (Bolt optimization)
         n_pts = len(wire_pts)
         tangents = np.zeros_like(wire_pts)
         tangents[1:-1] = wire_pts[2:] - wire_pts[:-2]
@@ -76,18 +77,21 @@ class CoilMathEngine:
         tangents[-1] = wire_pts[-1] - wire_pts[-2]
         norms = np.linalg.norm(tangents, axis=1, keepdims=True)
         tangents /= np.where(norms == 0, 1, norms)
-        
-        v_side = np.zeros_like(wire_pts)
+
         z_axis = np.array([0.0, 0.0, 1.0], dtype=np.float32)
-        for i in range(n_pts):
-            side = np.cross(tangents[i], z_axis)
-            side_len = np.linalg.norm(side)
-            v_side[i] = side / side_len if side_len > 1e-4 else np.array([1.0, 0.0, 0.0], dtype=np.float32)
-        
+        v_side = np.cross(tangents, z_axis)
+        side_norms = np.linalg.norm(v_side, axis=1, keepdims=True)
+
+        # Handle cases where tangents are parallel to Z-axis by using a fallback vector
+        mask = (side_norms > 1e-4).ravel()
+        v_side_final = np.tile(np.array([1.0, 0.0, 0.0], dtype=np.float32), (n_pts, 1))
+        v_side_final[mask] = v_side[mask] / side_norms[mask]
+        v_side = v_side_final
+
         v_up = np.cross(tangents, v_side)
         up_norms = np.linalg.norm(v_up, axis=1, keepdims=True)
         v_up /= np.where(up_norms == 0, 1, up_norms)
-        
+
         return tangents, v_side, v_up
 
     @staticmethod
