@@ -1,5 +1,5 @@
 # ui/tabs/settings_tab.py
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QFrame, QLabel, QLineEdit, QComboBox, QHBoxLayout, QTextEdit
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QFrame, QLabel, QLineEdit, QComboBox, QHBoxLayout, QTextEdit, QPushButton
 from PySide6.QtCore import Qt
 
 class SettingsTab(QWidget):

@@ -4,6 +4,7 @@ from PySide6.QtCore import QThread, Signal
 from core.coil_math import CoilMathEngine
 
 class CalculationWorker(QThread):
+    """Asynchronous worker for coil path and mesh calculations (Bolt Optimization)."""
     progress = Signal(int)
     finished = Signal(dict)
     error = Signal(str)
@@ -35,7 +36,7 @@ class CalculationWorker(QThread):
                     meshes.append(gl.MeshData(vertexes=np.zeros((3, 3), dtype=np.float32), faces=np.zeros((1, 3), dtype=np.uint32)))
                     continue
 
-                # Heavy calculation
+                # Heavy calculation (Vectorized in CoilMathEngine)
                 _, v_side, v_up = CoilMathEngine.calculate_mesh_vectors(wire_pts, self.v['t_res'], radius)
 
                 ang = np.linspace(0, 2 * np.pi, tube_res, endpoint=False, dtype=np.float32)
