@@ -45,6 +45,10 @@ class SettingsTab(QWidget):
         self.combo_units = QComboBox()
         self.combo_units.addItems(["mm", "inch"])
         self.combo_units.setFixedWidth(120)
+
+        self.btn_materials = QPushButton("Materialenbeheer")
+        self.btn_materials.setObjectName("secondaryActionButton")
+        self.btn_materials.clicked.connect(self.open_materials_manager)
         
         lay_card_viewer.addWidget(self.create_form_row(self.inputs["t_res"], self.lbl_t_res))
         lay_card_viewer.addWidget(self.create_form_row(self.inputs["p_res"], self.lbl_p_res))
@@ -52,6 +56,7 @@ class SettingsTab(QWidget):
         lay_card_viewer.addWidget(self.create_dropdown_row(self.combo_theme, self.lbl_theme))
         lay_card_viewer.addWidget(self.create_dropdown_row(self.combo_lang, self.lbl_lang))
         lay_card_viewer.addWidget(self.create_dropdown_row(self.combo_units, self.lbl_units))
+        lay_card_viewer.addWidget(self.btn_materials)
         
         lay_page_settings.addWidget(card_viewer, 0, Qt.AlignHCenter | Qt.AlignTop)
         lay_page_settings.addStretch()
@@ -72,6 +77,12 @@ class SettingsTab(QWidget):
         label.setObjectName("formLabel")
         lay.addWidget(label); lay.addStretch(); lay.addWidget(combo)
         return row
+
+    def open_materials_manager(self):
+        from ui.dialogs import MaterialsPopUp
+        is_light = (self.main_window.current_theme == "light")
+        pop = MaterialsPopUp(self, is_light_theme=is_light, lang=self.main_window.current_lang)
+        pop.exec()
 
     def retranslate_ui(self, tx):
         curr_theme_idx = self.combo_theme.currentIndex() if self.combo_theme.count() > 0 else 0

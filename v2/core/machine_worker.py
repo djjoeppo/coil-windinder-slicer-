@@ -62,6 +62,23 @@ class MachineWorker(QObject):
         self._safe_close()
         self.disconnected.emit()
 
+    @Slot()
+    def emergency_stop(self):
+        """Phase 3: Instantly halt streaming and send reset commands."""
+        self._is_sending = False
+        self._send_queue.clear()
+
+        if self.is_connected():
+            try:
+                # GRBL Soft Reset character (\x18)
+                self._ser.write(b'\x18')
+                # Universal E-stop G-code
+                self._ser.write(b'M112\n')
+                self._ser.flush()
+                self.line_received.emit("!!! EMERGENCY STOP SENT !!!")
+            except Exception as e:
+                self.line_received.emit(f"ERR,ESTOP,{e!s}")
+
     @Slot(list)
     def start_streaming(self, lines: list[str]):
         if not self.is_connected():

@@ -47,6 +47,14 @@ class DeviceTab(QWidget):
         sidebar_layout.addWidget(self.lbl_status)
         
         sidebar_layout.addSpacing(20)
+
+        # Limits Config
+        self.btn_limits_config = QPushButton("🔧 Machine Limits Config")
+        self.btn_limits_config.setObjectName("secondaryActionButton")
+        self.btn_limits_config.clicked.connect(self.open_limits_dialog)
+        sidebar_layout.addWidget(self.btn_limits_config)
+
+        sidebar_layout.addSpacing(10)
         
         # Execution controls
         self.btn_send = QPushButton("Start Winding")
@@ -58,6 +66,30 @@ class DeviceTab(QWidget):
         self.progress_bar.setRange(0, 100)
         self.progress_bar.setValue(0)
         sidebar_layout.addWidget(self.progress_bar)
+
+        sidebar_layout.addSpacing(20)
+
+        # Emergency Reset
+        self.btn_emergency = QPushButton("🛑 EMERGENCY RESET")
+        self.btn_emergency.setFixedHeight(50)
+        self.btn_emergency.setStyleSheet("""
+            QPushButton {
+                background-color: #b22222;
+                color: white;
+                font-weight: bold;
+                font-size: 14px;
+                border-radius: 6px;
+                border: 2px solid #8b0000;
+            }
+            QPushButton:hover {
+                background-color: #dc3545;
+            }
+            QPushButton:pressed {
+                background-color: #8b0000;
+            }
+        """)
+        self.btn_emergency.clicked.connect(self.emergency_stop)
+        sidebar_layout.addWidget(self.btn_emergency)
         
         sidebar_layout.addStretch()
         
@@ -124,11 +156,28 @@ class DeviceTab(QWidget):
         if not gcode:
             self.terminal.append("Error: No G-code to send")
             return
+
+        if "; ERROR: Machine limit reached!" in gcode:
+            self.terminal.append("CRITICAL: Cannot send G-code with safety errors!")
+            return
             
         self.btn_send.setEnabled(False)
         lines = gcode.split('\n')
         self.terminal.append(f"--- Streaming {len(lines)} lines ---")
         self.worker.start_streaming(lines)
+
+    def open_limits_dialog(self):
+        from ui.dialogs import MachineLimitsDialog
+        dialog = MachineLimitsDialog(self, self.main_window.controller.machine_limits)
+        if dialog.exec():
+            new_limits = dialog.get_values()
+            self.main_window.controller.machine_limits = new_limits
+            self.terminal.append(f"Machine limits updated: Max X = {new_limits['max_x']}mm")
+
+    def emergency_stop(self):
+        self.terminal.append("!!! EMERGENCY RESET ACTIVATED !!!")
+        self.worker.emergency_stop()
+
 
     def retranslate_ui(self, tx):
         self.lbl_title.setText(tx.get("nav_device", "Device"))

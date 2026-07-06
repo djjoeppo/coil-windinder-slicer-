@@ -206,6 +206,7 @@ class CoilController:
         QMessageBox.critical(self.ui, "Fout", f"Berekeningsfout: {err_msg}")
 
     def open_machine_limits(self):
+        from ui.dialogs import MachineLimitsDialog
         dialog = MachineLimitsDialog(self.ui, self.machine_limits)
         if dialog.exec():
             self.machine_limits = dialog.get_values()
@@ -265,7 +266,8 @@ class CoilController:
                 spool_offset=spool_offset,
                 z_force=z_force,
                 feedrate=feedrate,
-                units=self.gcode_engine.units
+                units=self.gcode_engine.units,
+                max_x=self.machine_limits["max_x"]
             )
             self.tab_preview.set_gcode(gcode)
             QMessageBox.information(self.ui, "Succes", "G-code succesvol gegenereerd.")
