@@ -16,22 +16,43 @@ from PySide6.QtGui import QSurfaceFormat
 
 def pre_flight_check():
     """Phase 4: Verify critical assets and environment before startup."""
-    # Robust asset discovery (Bolt optimization)
-    base_dir = Path(__file__).resolve().parent
-    assets_dir = base_dir / "assets"
+    # Hyper-Robust asset discovery (Bolt Optimization v3)
+    script_dir = Path(__file__).resolve().parent
+    cwd = Path.cwd()
 
-    # Fallback search for assets (e.g., if running from a different directory)
-    if not assets_dir.exists():
-        assets_dir = Path.cwd() / "v2" / "assets"
-        if not assets_dir.exists():
-             assets_dir = Path.cwd() / "assets"
+    # Define search candidates with their absolute resolved paths
+    candidates = [
+        script_dir / "assets",
+        cwd / "v2" / "assets",
+        cwd / "assets",
+        script_dir.parent / "assets"
+    ]
 
     critical_files = ["languages.json", "materials.json", "machine_settings.json"]
-    missing = [f for f in critical_files if not (assets_dir / f).exists()]
+    found_assets_dir = None
+    diag_info = []
 
-    if missing:
+    for d in candidates:
+        abs_d = d.resolve()
+        if not abs_d.exists():
+            diag_info.append(f"{abs_d} -> Map bestaat niet")
+            continue
+        if not abs_d.is_dir():
+            diag_info.append(f"{abs_d} -> Is geen map")
+            continue
+
+        # A directory is only valid if it contains at least one critical file
+        missing_here = [f for f in critical_files if not (abs_d / f).exists()]
+        if not missing_here:
+            found_assets_dir = abs_d
+            break
+        else:
+            diag_info.append(f"{abs_d} -> Bestanden missen: {', '.join(missing_here)}")
+
+    if not found_assets_dir:
+        details = "\n".join(diag_info)
         raise FileNotFoundError(
-            f"Kritieke bestanden ontbreken in {assets_dir.resolve()}:\n{', '.join(missing)}"
+            f"Assets map kon niet worden gelokaliseerd.\n\nDiagnose:\n{details}"
         )
 
     # Check for basic dependencies (NumPy is critical for math)
