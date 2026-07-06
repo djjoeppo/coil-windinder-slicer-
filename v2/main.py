@@ -41,7 +41,7 @@ def pre_flight_check():
             diag_info.append(f"{abs_d} -> Is geen map")
             continue
 
-        # A directory is only valid if it contains at least one critical file
+        # A directory is only valid if it contains all critical files
         missing_here = [f for f in critical_files if not (abs_d / f).exists()]
         if not missing_here:
             found_assets_dir = abs_d

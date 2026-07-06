@@ -8,6 +8,7 @@ from PySide6.QtGui import QDoubleValidator
 from core.config import TRANSLATIONS, get_resource_path
 
 class MachineLimitsDialog(QDialog):
+    """Dialog for configuring machine travel and force limits."""
     def __init__(self, parent=None, current_limits=None):
         super().__init__(parent)
         self.setWindowTitle("Machine Limieten")
@@ -68,7 +69,7 @@ class MaterialsPopUp(QDialog):
         super().__init__(parent)
         self.lang = lang
         self.is_light_theme = is_light_theme
-        self.setWindowTitle(TRANSLATIONS[lang].get("pop_mat_title", "Material Management"))
+        self.setWindowTitle(TRANSLATIONS.get(lang, {}).get("pop_mat_title", "Material Management"))
         self.resize(750, 500)  
         self.setWindowModality(Qt.WindowModal)
         
@@ -93,7 +94,7 @@ class MaterialsPopUp(QDialog):
         left_layout = QVBoxLayout(left_container)
         left_layout.setContentsMargins(0, 0, 0, 0)
         
-        lbl_list_title = QLabel(TRANSLATIONS[self.lang].get("pop_mat_title", "Material Management"))
+        lbl_list_title = QLabel(TRANSLATIONS.get(self.lang, {}).get("pop_mat_title", "Material Management"))
         lbl_list_title.setObjectName("sectionTitle")
         left_layout.addWidget(lbl_list_title)
         
