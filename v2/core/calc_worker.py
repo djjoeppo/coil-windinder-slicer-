@@ -45,8 +45,14 @@ class CalculationWorker(QThread):
                 v_side_exp = v_side.reshape(-1, 1, 3)
                 v_up_exp = v_up.reshape(-1, 1, 3)
 
-                verts = wire_pts.reshape(-1, 1, 3) + radius * (cos_ang * v_side_exp + sin_ang * v_up_exp)
+                # Mesh offsets
+                offsets = cos_ang * v_side_exp + sin_ang * v_up_exp
+                verts = wire_pts.reshape(-1, 1, 3) + radius * offsets
                 verts = verts.reshape(-1, 3)
+
+                # Bolt Optimization: Pre-calculate normals to prevent UI freeze during MeshData initialization
+                # In a tube mesh, normals are simply the unit vectors of the offsets
+                normals = offsets.reshape(-1, 3)
 
                 n_seg = len(wire_pts) - 1
                 idx1 = np.arange(n_seg * tube_res, dtype=np.uint32).reshape(n_seg, tube_res)
@@ -56,7 +62,7 @@ class CalculationWorker(QThread):
                 f2 = np.column_stack([r1_n.ravel(), r2_n.ravel(), idx2.ravel()])
                 wire_faces = np.vstack([f1, f2])
 
-                meshes.append(gl.MeshData(vertexes=verts, faces=wire_faces))
+                meshes.append(gl.MeshData(vertexes=verts, faces=wire_faces, vertexNormals=normals))
 
                 prog_val = 40 + int((w_idx + 1) / num_wires * 50)
                 self.progress.emit(prog_val)
