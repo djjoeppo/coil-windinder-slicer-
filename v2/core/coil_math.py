@@ -19,10 +19,21 @@ class CoilMathEngine:
         if turns_per_layer < 0.1: turns_per_layer = 0.1
         
         steps_per_layer = int(turns_per_layer * res) + 2
+
+        # Performance optimization: if steps_per_layer is excessively large, cap it or downsample.
+        # This prevents freezes when generating massive coils (e.g. wire_d = 0.2, width = 50, turns_per_layer = 250).
+        max_steps = 1500
+        if steps_per_layer > max_steps:
+            steps_per_layer = max_steps
+
         all_pts_list = []
         all_angles_list = [] # ADDED
         total_len_mm = 0
         
+        # Performance optimization: if layers is extremely large, warn or cap it for rendering
+        if layers > 50:
+            layers = 50
+
         for w_idx in range(num_wires):
             wire_continuous_pts = []
             wire_continuous_angles = [] # ADDED
