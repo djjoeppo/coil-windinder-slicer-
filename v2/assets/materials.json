@@ -1,0 +1,29 @@
+[
+    {
+        "name": "Koperdraad",
+        "diameter": 0.2,
+        "insulation": 0.0,
+        "ohm": 0.085,
+        "max_current": 2.5,
+        "max_voltage": 500.0,
+        "min_spool_d": 20.0
+    },
+    {
+        "name": "Aluminiumdraad",
+        "diameter": 0.8,
+        "insulation": 0.06,
+        "ohm": 0.054,
+        "max_current": 4.0,
+        "max_voltage": 600,
+        "min_spool_d": 35.0
+    },
+    {
+        "name": "test",
+        "diameter": 0.25,
+        "insulation": 0.05,
+        "ohm": 0.0,
+        "max_current": 0.0,
+        "max_voltage": 0.0,
+        "min_spool_d": 0.0
+    }
+]
