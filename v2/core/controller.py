@@ -136,11 +136,22 @@ class CoilController:
             num_wires = int(float(self.tab_prepare.inputs["num_wires"].text())) if is_multi else 1
             num_wires = max(1, num_wires)
 
+            from core.config import parse_fraction_or_float, inch_to_mm
+
+            unit = self.tab_settings.combo_units.currentText()
+            scale_to_mm = 25.4 if unit == "inch" else 1.0
+
+            # Parse inputs (supporting fractions and mixed fractions)
+            i_val = parse_fraction_or_float(self.tab_prepare.inputs['i'].text()) * scale_to_mm
+            hole_val = parse_fraction_or_float(self.tab_prepare.inputs['hole'].text()) * scale_to_mm
+            f_val = parse_fraction_or_float(self.tab_prepare.inputs['f'].text()) * scale_to_mm
+            b_val = parse_fraction_or_float(self.tab_prepare.inputs['b'].text()) * scale_to_mm
+
             v = {
-                'i': float(self.tab_prepare.inputs['i'].text()),
-                'hole': float(self.tab_prepare.inputs['hole'].text()),
-                'f': float(self.tab_prepare.inputs['f'].text()),
-                'b': float(self.tab_prepare.inputs['b'].text()),
+                'i': i_val,
+                'hole': hole_val,
+                'f': f_val,
+                'b': b_val,
                 'l': int(self.tab_prepare.inputs['l'].text()),
                 't_res': float(self.tab_settings.inputs['t_res'].text()),
                 'p_res': float(self.tab_settings.inputs['p_res'].text()),
@@ -148,8 +159,20 @@ class CoilController:
                 'num_wires': num_wires
             }
 
-            wire_d_text = self.tab_prepare.input_wire_d_display.text().split(' ')[0]
-            v['w'] = float(wire_d_text)
+            # Retrieve wire diameter: if we are in inch mode, extract the fraction or decimals inside parentheses or AWG lookup
+            wire_d_text = self.tab_prepare.input_wire_d_display.text()
+            if "AWG" in wire_d_text:
+                # We can extract the millimeter or inch value. e.g. "24 AWG (0.0201")"
+                # Let's extract the value inside parenthesises: e.g. 0.0201
+                import re
+                match = re.search(r'\(([^)]+)\)', wire_d_text)
+                if match:
+                    val_str = match.group(1).replace('"', '').strip()
+                    v['w'] = float(val_str) * 25.4 # convert inch back to mm internally
+                else:
+                    v['w'] = 0.5 # fallback
+            else:
+                v['w'] = float(wire_d_text.split(' ')[0]) # millimeter value
 
             if v['hole'] >= v['i']:
                 v['hole'] = v['i'] - 1.0
@@ -242,11 +265,16 @@ class CoilController:
             max_x_calc = np.max(np.abs(pts[:, 2] + wire_offset + spool_offset))
             max_y_calc = np.max(np.sqrt(pts[:, 0]**2 + pts[:, 1]**2) + y_offset)
 
+            # Let's handle scale based on units selected in Settings Tab
+            unit = self.tab_settings.combo_units.currentText()
+            scale = 1.0 / 25.4 if unit == "inch" else 1.0
+            unit_suffix = "inch" if unit == "inch" else "mm"
+
             error_msgs = []
             if max_x_calc > self.machine_limits["max_x"]:
-                error_msgs.append(f"X-as limiet overschreden: {max_x_calc:.2f} > {self.machine_limits['max_x']}")
+                error_msgs.append(f"X-as limiet overschreden: {max_x_calc * scale:.2f} {unit_suffix} > {self.machine_limits['max_x'] * scale:.2f} {unit_suffix}")
             if max_y_calc > self.machine_limits["max_y"]:
-                error_msgs.append(f"Y-as limiet overschreden: {max_y_calc:.2f} > {self.machine_limits['max_y']}")
+                error_msgs.append(f"Y-as limiet overschreden: {max_y_calc * scale:.2f} {unit_suffix} > {self.machine_limits['max_y'] * scale:.2f} {unit_suffix}")
             if z_force > self.machine_limits["max_z_force"]:
                 error_msgs.append(f"Z-kracht limiet overschreden: {z_force:.2f} > {self.machine_limits['max_z_force']}")
 

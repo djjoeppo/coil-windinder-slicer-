@@ -43,18 +43,20 @@ class GCodeEngine:
         # Y-axis (nozzle distance) = radial_dist + y_offset
         y_axis = np.sqrt(pts[:, 0]**2 + pts[:, 1]**2) + nozzle_y_offset
         
+        scale = 1.0 / 25.4 if units.lower() == "inch" else 1.0
+
         # Start position
         if x_axis[0] > max_x or x_axis[0] < 0:
-            gcode.append(f"; ERROR: Machine limit reached! X ({x_axis[0]:.3f}) exceeds limit (0-{max_x}).")
+            gcode.append(f"; ERROR: Machine limit reached! X ({x_axis[0] * scale:.3f}) exceeds limit (0-{max_x * scale}).")
             return "\n".join(gcode)
 
-        gcode.append(f"G0 A{a_axis[0]:.3f} X{x_axis[0]:.3f} Y{y_axis[0]:.3f} Z{z_force:.3f}")
+        gcode.append(f"G0 A{a_axis[0]:.3f} X{x_axis[0] * scale:.3f} Y{y_axis[0] * scale:.3f} Z{z_force:.3f}")
         
         for i in range(1, len(pts)):
             if x_axis[i] > max_x or x_axis[i] < 0:
-                gcode.append(f"; ERROR: Machine limit reached! X ({x_axis[i]:.3f}) exceeds limit (0-{max_x}).")
+                gcode.append(f"; ERROR: Machine limit reached! X ({x_axis[i] * scale:.3f}) exceeds limit (0-{max_x * scale}).")
                 break
-            gcode.append(f"G1 A{a_axis[i]:.3f} X{x_axis[i]:.3f} Y{y_axis[i]:.3f} Z{z_force:.3f} F{feedrate}")
+            gcode.append(f"G1 A{a_axis[i]:.3f} X{x_axis[i] * scale:.3f} Y{y_axis[i] * scale:.3f} Z{z_force:.3f} F{feedrate}")
             
         # Force Mode OFF
         gcode.append("M400 ; Force Mode OFF (Z in mm)")

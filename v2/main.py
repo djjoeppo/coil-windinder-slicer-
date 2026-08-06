@@ -72,15 +72,92 @@ def main():
 
     app = QApplication(sys.argv)
     
+    # 1. Run diagnostics
     try:
-        # 1. Run diagnostics
         pre_flight_check()
+    except Exception as e:
+        error_msg = f"Fataal opstartprobleem:\n\n{str(e)}"
+        print(f"CRITICAL ERROR: {e}")
+        msg_box = QMessageBox()
+        msg_box.setIcon(QMessageBox.Critical)
+        msg_box.setWindowTitle("Opstartfout")
+        msg_box.setText(error_msg)
+        msg_box.setInformativeText("Controleer of alle bibliotheken en asset-bestanden aanwezig zijn.")
+        msg_box.setStandardButtons(QMessageBox.Ok)
+        msg_box.exec()
+        sys.exit(1)
 
-        # 2. Launch Main Window (Deferred import to catch startup crashes in GUI)
+    # 2. Splash Screen with progress & custom logo with fallback checking
+    from PySide6.QtWidgets import QSplashScreen
+    from PySide6.QtGui import QPixmap, QIcon
+    from PySide6.QtCore import Qt, QTimer
+    from core.config import get_resource_path
+
+    # Check for logo in assets (both .png and .jpg/jpeg)
+    logo_path = None
+    possible_extensions = ["logo.png", "logo.jpg", "logo.jpeg"]
+    for ext in possible_extensions:
+        try:
+            path = get_resource_path(ext)
+            if os.path.exists(path):
+                logo_path = path
+                break
+        except Exception:
+            pass
+
+    # If logo doesn't exist, we must trigger a dismissible debugging dialog as requested
+    if not logo_path:
+        expected_path = os.path.join(str(Path(__file__).resolve().parent / "assets"), "logo.png")
+        msg_box = QMessageBox()
+        msg_box.setIcon(QMessageBox.Warning)
+        msg_box.setWindowTitle("Afbeelding/Icoontje mist!")
+        msg_box.setText(f"Waarschuwing: Het opstart-logo kon niet worden gevonden.\n\nVerwachte locatie:\n{expected_path}")
+        msg_box.setInformativeText("U kunt gewoon doorklikken om de applicatie op te starten.")
+        msg_box.setStandardButtons(QMessageBox.Ok)
+        msg_box.exec()
+
+        # Use an empty fallback pixmap for splash
+        splash_pix = QPixmap(400, 300)
+        splash_pix.fill(Qt.darkGray)
+    else:
+        splash_pix = QPixmap(logo_path)
+
+    splash = QSplashScreen(splash_pix, Qt.WindowStaysOnTopHint)
+    splash.show()
+    splash.showMessage("CoilMaster Pro aan het laden...", Qt.AlignBottom | Qt.AlignCenter, Qt.white)
+
+    # Simulate loading process on progress bar / splash
+    for progress in range(1, 101, 15):
+        splash.showMessage(f"CoilMaster Pro aan het laden... {progress}%", Qt.AlignBottom | Qt.AlignCenter, Qt.white)
+        app.processEvents()
+        QTimer.singleShot(50, lambda: None) # brief delay
+
+    try:
+        # 3. Launch Main Window (Deferred import to catch startup crashes in GUI)
         from ui.main_window import CoilAppLayout
         window = CoilAppLayout()
         window.setWindowTitle("CoilMaster Pro - Unified G-Code Generator")
+
+        # Set Window Desktop Icon
+        icon_path = None
+        for ext in ["icon.png", "logo.png", "icon.ico"]:
+            try:
+                p = get_resource_path(ext)
+                if os.path.exists(p):
+                    icon_path = p
+                    break
+            except Exception:
+                pass
+
+        if icon_path:
+            window.setWindowIcon(QIcon(icon_path))
+            app.setWindowIcon(QIcon(icon_path))
+        else:
+            # Try setting standard fallback if any icon found
+            pass
+
         window.resize(1450, 900)
+        splash.finish(window)
         window.show()
         sys.exit(app.exec())
 

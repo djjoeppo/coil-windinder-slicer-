@@ -75,14 +75,63 @@ class CoilAppLayout(QWidget):
         self.current_lang = "NL" if text == "Nederlands" else "EN"
         self.update_ui_text()
 
+    def change_units(self, unit_text):
+        # Notify the prepare tab to update unit displays
+        if hasattr(self, 'tab_prepare'):
+            self.tab_prepare.on_unit_changed(unit_text)
+
     def update_ui_text(self):
         tx = TRANSLATIONS.get(self.current_lang, {})
         if not tx: return
         
-        self.btn_nav_prepare.setText(tx.get("nav_prepare", "PREPARE"))
-        self.btn_nav_preview.setText(tx.get("nav_preview", "PREVIEW"))
-        self.btn_nav_device.setText(tx.get("nav_device", "DEVICE"))
-        self.btn_nav_settings.setText(tx.get("nav_settings", "SETTINGS"))
+        # Load and set icons for each button with fallback handling
+        from PySide6.QtGui import QIcon
+        from PySide6.QtWidgets import QMessageBox
+        from core.config import get_resource_path
+        import os
+        from pathlib import Path
+
+        icon_mapping = {
+            self.btn_nav_prepare: ("prepare.png", tx.get("nav_prepare", "PREPARE")),
+            self.btn_nav_preview: ("preview.png", tx.get("nav_preview", "PREVIEW")),
+            self.btn_nav_device: ("device.png", tx.get("nav_device", "DEVICE")),
+            self.btn_nav_settings: ("settings.png", tx.get("nav_settings", "SETTINGS"))
+        }
+
+        # We only want to trigger warning dialogs at startup to prevent multiple sequential blockers inside translation switch
+        show_startup_warnings = not hasattr(self, '_warnings_triggered')
+        missing_icons = []
+
+        for btn, (filename, text) in icon_mapping.items():
+            btn.setText(text)
+
+            # Use discoverable paths
+            icon_path = None
+            try:
+                icon_path = get_resource_path(os.path.join("icons", filename))
+            except Exception:
+                pass
+
+            if icon_path and os.path.exists(icon_path):
+                btn.setIcon(QIcon(icon_path))
+            else:
+                # Icon not found, store in list for a single unified warning pop-up at startup
+                btn.setIcon(QIcon()) # empty icon so it is text-only seamlessly
+                expected_dir = str(Path(__file__).resolve().parent.parent / "assets" / "icons")
+                expected_filepath = os.path.join(expected_dir, filename)
+                missing_icons.append((filename, expected_filepath))
+
+        if missing_icons and show_startup_warnings:
+            self._warnings_triggered = True
+            details = "\n".join([f"- '{fn}' op locatie:\n  {p}\n" for fn, p in missing_icons])
+
+            msg_box = QMessageBox(self)
+            msg_box.setIcon(QMessageBox.Warning)
+            msg_box.setWindowTitle("Afbeeldingen/Icoontjes missen!")
+            msg_box.setText(f"Waarschuwing: De volgende icoontjes konden niet worden geladen:\n\n{details}")
+            msg_box.setInformativeText("U kunt gewoon doorwerken. De knoppen tonen tijdelijk alleen tekst.")
+            msg_box.setStandardButtons(QMessageBox.Ok)
+            msg_box.exec()
         
         self.tab_prepare.retranslate_ui(tx)
         self.tab_preview.retranslate_ui(tx)

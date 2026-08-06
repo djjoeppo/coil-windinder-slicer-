@@ -197,13 +197,46 @@ class PrepareTab(QWidget):
             self.input_wire_d_display.setText("0.0 mm")
 
     def on_material_dropdown_changed(self, selected_name):
+        from core.config import mm_to_awg
         for mat in self.materials_database:
             if mat["name"] == selected_name:
                 d = float(mat.get("diameter", 0.0))
                 i = float(mat.get("insulation", 0.0))
                 total_d = d + i
-                self.input_wire_d_display.setText(f"{total_d:.2f} mm")
+
+                # Check current unit
+                unit = self.main_window.tab_settings.combo_units.currentText() if hasattr(self.main_window, 'tab_settings') else "mm"
+                if unit == "inch":
+                    awg_val = mm_to_awg(total_d)
+                    inch_val = total_d / 25.4
+                    self.input_wire_d_display.setText(f"{awg_val} AWG ({inch_val:.4f}\")")
+                else:
+                    self.input_wire_d_display.setText(f"{total_d:.2f} mm")
                 return
+
+    def on_unit_changed(self, unit_text):
+        """Converts currently typed values in the inputs from old unit to new unit, and updates the display."""
+        from core.config import parse_fraction_or_float, mm_to_inch, inch_to_mm
+
+        # Convert the inputs: i, hole, f, b
+        keys_to_convert = ['i', 'hole', 'f', 'b']
+
+        for k in keys_to_convert:
+            if k in self.inputs:
+                raw_text = self.inputs[k].text()
+                val = parse_fraction_or_float(raw_text)
+                if unit_text == "inch":
+                    # Convert from mm to inch
+                    converted = mm_to_inch(val)
+                    self.inputs[k].setText(f"{converted:.4f}")
+                else:
+                    # Convert from inch to mm
+                    converted = inch_to_mm(val)
+                    self.inputs[k].setText(f"{converted:.2f}")
+
+        # Update labels in languages
+        tx = TRANSLATIONS.get(self.main_window.current_lang, {})
+        self.retranslate_ui(tx)
 
     def open_materials_popup(self):
         is_light = (self.main_window.current_theme == "light")
@@ -252,13 +285,28 @@ class PrepareTab(QWidget):
     def retranslate_ui(self, tx):
         self.sec_spool_title.setText(tx["sec_spool"])
         self.sec_coil_title.setText(tx["sec_coil"])
-        self.lbl_inner_d.setText(tx["lbl_inner_d"])
-        self.lbl_hole_d.setText(tx["lbl_hole_d"])
-        self.lbl_flange_d.setText(tx["lbl_flange_d"])
-        self.lbl_width.setText(tx["lbl_width"])
+
+        # Adjust mm / inch suffix based on current settings unit
+        unit = self.main_window.tab_settings.combo_units.currentText() if hasattr(self.main_window, 'tab_settings') else "mm"
+        suffix = " (inch):" if unit == "inch" else " (mm):"
+
+        inner_d_txt = tx.get("lbl_inner_d", "Kern Diameter (mm):").replace(" (mm):", suffix).replace(" (inch):", suffix)
+        hole_d_txt = tx.get("lbl_hole_d", "Gat Diameter (mm):").replace(" (mm):", suffix).replace(" (inch):", suffix)
+        flange_d_txt = tx.get("lbl_flange_d", "Flens Diameter (mm):").replace(" (mm):", suffix).replace(" (inch):", suffix)
+        width_txt = tx.get("lbl_width", "Spoel Breedte (mm):").replace(" (mm):", suffix).replace(" (inch):", suffix)
+
+        self.lbl_inner_d.setText(inner_d_txt)
+        self.lbl_hole_d.setText(hole_d_txt)
+        self.lbl_flange_d.setText(flange_d_txt)
+        self.lbl_width.setText(width_txt)
+
         self.lbl_spool_color.setText(tx["lbl_spool_color"])
         self.lbl_material.setText(tx["lbl_material"])
-        self.lbl_wire_d.setText(tx["lbl_wire_d"])
+
+        wire_d_lbl = tx["lbl_wire_d"]
+        if unit == "inch":
+            wire_d_lbl = wire_d_lbl.replace("Ø", "AWG / Ø")
+        self.lbl_wire_d.setText(wire_d_lbl)
         self.lbl_layers.setText(tx["lbl_layers"])
         self.lbl_wire_type.setText(tx["lbl_wire_type"])
         self.lbl_num_wires.setText(tx["lbl_num_wires"])

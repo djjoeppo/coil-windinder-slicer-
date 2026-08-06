@@ -26,8 +26,8 @@ class SettingsTab(QWidget):
         self.sec_settings_title = QLabel(); self.sec_settings_title.setObjectName("sectionTitle")
         lay_card_viewer.addWidget(self.sec_settings_title)
         
-        self.lbl_t_res = QLabel(); self.inputs["t_res"] = QLineEdit("32")
-        self.lbl_p_res = QLabel(); self.inputs["p_res"] = QLineEdit("64")
+        self.lbl_t_res = QLabel(); self.inputs["t_res"] = QLineEdit("16")
+        self.lbl_p_res = QLabel(); self.inputs["p_res"] = QLineEdit("32")
         
         self.lbl_theme = QLabel()
         self.combo_theme = QComboBox()
@@ -45,6 +45,7 @@ class SettingsTab(QWidget):
         self.combo_units = QComboBox()
         self.combo_units.addItems(["mm", "inch"])
         self.combo_units.setFixedWidth(120)
+        self.combo_units.currentTextChanged.connect(self.main_window.change_units)
 
         self.btn_materials = QPushButton("Materialenbeheer")
         self.btn_materials.setObjectName("secondaryActionButton")

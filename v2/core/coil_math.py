@@ -18,11 +18,23 @@ class CoilMathEngine:
         turns_per_layer = effective_width / effective_pitch
         if turns_per_layer < 0.1: turns_per_layer = 0.1
         
-        steps_per_layer = int(turns_per_layer * res) + 2
+        # Determine an adaptive resolution (points per turn) to balance performance and quality.
+        # We want to keep steps_per_layer reasonable (e.g. under 6000), but we MUST have at least 12 points per turn
+        # to prevent straight lines cutting through the spool (the "basket/star" glitch).
+        adaptive_res = res
+        if (turns_per_layer * adaptive_res) > 6000:
+            adaptive_res = max(12.0, 6000.0 / turns_per_layer)
+
+        steps_per_layer = int(turns_per_layer * adaptive_res) + 2
+
         all_pts_list = []
         all_angles_list = [] # ADDED
         total_len_mm = 0
         
+        # Performance optimization: if layers is extremely large, warn or cap it for rendering
+        if layers > 50:
+            layers = 50
+
         for w_idx in range(num_wires):
             wire_continuous_pts = []
             wire_continuous_angles = [] # ADDED
