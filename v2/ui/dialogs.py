@@ -69,7 +69,7 @@ class MaterialsPopUp(QDialog):
         super().__init__(parent)
         self.lang = lang
         self.is_light_theme = is_light_theme
-        self.setWindowTitle(TRANSLATIONS.get(lang, {}).get("pop_mat_title", "Material Management"))
+        self.setWindowTitle("Materialenbeheer" if lang == "NL" else "Material Management")
         self.resize(750, 500)  
         self.setWindowModality(Qt.WindowModal)
         
@@ -84,6 +84,20 @@ class MaterialsPopUp(QDialog):
         self.apply_theme()
         self.load_materials_from_json()
 
+    def get_current_unit(self):
+        """Dynamic unit discovery from application tabs/parent."""
+        try:
+            if self.parent():
+                p = self.parent()
+                # PrepareTab or SettingsTab is our parent
+                if hasattr(p, 'main_window'):
+                    return p.main_window.tab_settings.combo_units.currentText()
+                if hasattr(p, 'tab_settings'):
+                    return p.tab_settings.combo_units.currentText()
+        except Exception:
+            pass
+        return "mm"
+
     def init_ui(self):
         main_layout = QHBoxLayout(self)
         main_layout.setContentsMargins(15, 15, 15, 15)
@@ -94,7 +108,7 @@ class MaterialsPopUp(QDialog):
         left_layout = QVBoxLayout(left_container)
         left_layout.setContentsMargins(0, 0, 0, 0)
         
-        lbl_list_title = QLabel(TRANSLATIONS.get(self.lang, {}).get("pop_mat_title", "Material Management"))
+        lbl_list_title = QLabel("Materialenbeheer" if self.lang == "NL" else "Material Management")
         lbl_list_title.setObjectName("sectionTitle")
         left_layout.addWidget(lbl_list_title)
         
@@ -112,17 +126,20 @@ class MaterialsPopUp(QDialog):
         right_layout.setContentsMargins(15, 15, 15, 15)
         right_layout.setSpacing(10)
 
-        double_validator = QDoubleValidator(0.0, 10000.0, 3, self)
+        double_validator = QDoubleValidator(0.0, 10000.0, 4, self)
         double_validator.setNotation(QDoubleValidator.StandardNotation)
 
+        unit = self.get_current_unit()
+        unit_suffix = "inch" if unit == "inch" else "MM"
+
         fields = [
-            ("name", "Naam", None),
-            ("diameter", "Diameter mm", double_validator),
-            ("insulation", "Isolatie mm", double_validator),
-            ("ohm", "Ohm per meter", double_validator),
-            ("max_current", "Max stroom A", double_validator),
-            ("max_voltage", "Max spanning V", double_validator),
-            ("min_spool_d", "Minimale spoel diameter mm", double_validator)
+            ("name", "Naam" if self.lang == "NL" else "Name", None),
+            ("diameter", f"Diameter {unit_suffix}", double_validator),
+            ("insulation", f"Isolatie {unit_suffix}" if self.lang == "NL" else f"Insulation {unit_suffix}", double_validator),
+            ("ohm", "Ohm per meter" if self.lang == "NL" else "Ohm per meter", double_validator),
+            ("max_current", "Max stroom A" if self.lang == "NL" else "Max current A", double_validator),
+            ("max_voltage", "Max spanning V" if self.lang == "NL" else "Max voltage V", double_validator),
+            ("min_spool_d", f"Minimale spoel diameter {unit_suffix}" if self.lang == "NL" else f"Minimum spool diameter {unit_suffix}", double_validator)
         ]
 
         for key, label_text, validator in fields:
@@ -148,17 +165,17 @@ class MaterialsPopUp(QDialog):
         right_layout.addStretch()
 
         # 3. ACTIEKNOPPEN
-        self.btn_new = QPushButton("Nieuw")
+        self.btn_new = QPushButton("Nieuw" if self.lang == "NL" else "New")
         self.btn_new.setObjectName("actionBtnNew")
         self.btn_new.clicked.connect(self.add_new_material)
         right_layout.addWidget(self.btn_new)
 
-        self.btn_save = QPushButton("Opslaan")
+        self.btn_save = QPushButton("Opslaan" if self.lang == "NL" else "Save")
         self.btn_save.setObjectName("actionBtnSave")
         self.btn_save.clicked.connect(self.save_current_material)
         right_layout.addWidget(self.btn_save)
 
-        self.btn_delete = QPushButton("Verwijder")
+        self.btn_delete = QPushButton("Verwijder" if self.lang == "NL" else "Delete")
         self.btn_delete.setObjectName("actionBtnDelete")
         self.btn_delete.clicked.connect(self.delete_current_material)
         right_layout.addWidget(self.btn_delete)
@@ -193,11 +210,19 @@ class MaterialsPopUp(QDialog):
         self.material_list.blockSignals(True)
         self.material_list.clear()
         
+        unit = self.get_current_unit()
+
         for mat in self.materials_data:
             d = float(mat.get("diameter", 0.0))
             i = float(mat.get("insulation", 0.0))
             total_d = d + i
-            display_text = f"{mat['name']} ({total_d:.2f} mm)"
+
+            if unit == "inch":
+                from core.config import mm_to_awg
+                awg_val = mm_to_awg(total_d)
+                display_text = f"{mat['name']} {awg_val} gage"
+            else:
+                display_text = f"{mat['name']} {total_d:.2f} MM"
             
             item = QListWidgetItem(display_text)
             self.material_list.addItem(item)
@@ -218,13 +243,21 @@ class MaterialsPopUp(QDialog):
         self.current_index = index
         mat = self.materials_data[index]
         
+        unit = self.get_current_unit()
+        scale = 1.0 / 25.4 if unit == "inch" else 1.0
+
+        d_val = float(mat.get("diameter", 0.0)) * scale
+        i_val = float(mat.get("insulation", 0.0)) * scale
+        min_spool_val = float(mat.get("min_spool_d", 0.0)) * scale
+
         self.inputs["name"].setText(str(mat["name"]))
-        self.inputs["diameter"].setText(str(mat["diameter"]).replace('.', ','))
-        self.inputs["insulation"].setText(str(mat["insulation"]).replace('.', ','))
-        self.inputs["ohm"].setText(str(mat["ohm"]).replace('.', ','))
-        self.inputs["max_current"].setText(str(mat["max_current"]).replace('.', ','))
-        self.inputs["max_voltage"].setText(str(mat["max_voltage"]).replace('.', ','))
-        self.inputs["min_spool_d"].setText(str(mat["min_spool_d"]).replace('.', ','))
+        self.inputs["diameter"].setText(f"{d_val:.4f}".replace('.', ',') if unit == "inch" else f"{d_val:.3f}".replace('.', ','))
+        self.inputs["insulation"].setText(f"{i_val:.4f}".replace('.', ',') if unit == "inch" else f"{i_val:.3f}".replace('.', ','))
+        self.inputs["min_spool_d"].setText(f"{min_spool_val:.3f}".replace('.', ',') if unit == "inch" else f"{min_spool_val:.2f}".replace('.', ','))
+
+        self.inputs["ohm"].setText(str(mat.get("ohm", 0.0)).replace('.', ','))
+        self.inputs["max_current"].setText(str(mat.get("max_current", 0.0)).replace('.', ','))
+        self.inputs["max_voltage"].setText(str(mat.get("max_voltage", 0.0)).replace('.', ','))
 
     def clear_form_fields(self):
         for le in self.inputs.values():
@@ -238,7 +271,7 @@ class MaterialsPopUp(QDialog):
 
     def add_new_material(self):
         new_mat = {
-            "name": "Nieuw",
+            "name": "Nieuw" if self.lang == "NL" else "New",
             "diameter": 0.500,
             "insulation": 0.050,
             "ohm": 0.000,
@@ -256,16 +289,23 @@ class MaterialsPopUp(QDialog):
             
         name_text = self.inputs["name"].text().strip()
         if not name_text:
-            name_text = "Naamloos"
+            name_text = "Naamloos" if self.lang == "NL" else "Unnamed"
+
+        unit = self.get_current_unit()
+        scale_back = 25.4 if unit == "inch" else 1.0
+
+        d_parsed = self.parse_float(self.inputs["diameter"].text()) * scale_back
+        i_parsed = self.parse_float(self.inputs["insulation"].text()) * scale_back
+        min_spool_parsed = self.parse_float(self.inputs["min_spool_d"].text()) * scale_back
 
         self.materials_data[self.current_index] = {
             "name": name_text,
-            "diameter": self.parse_float(self.inputs["diameter"].text()),
-            "insulation": self.parse_float(self.inputs["insulation"].text()),
+            "diameter": d_parsed,
+            "insulation": i_parsed,
             "ohm": self.parse_float(self.inputs["ohm"].text()),
             "max_current": self.parse_float(self.inputs["max_current"].text()),
             "max_voltage": self.parse_float(self.inputs["max_voltage"].text()),
-            "min_spool_d": self.parse_float(self.inputs["min_spool_d"].text())
+            "min_spool_d": min_spool_parsed
         }
         self.save_to_json_file()
         self.update_list_widget(select_index=self.current_index)
