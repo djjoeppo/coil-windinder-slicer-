@@ -1,5 +1,5 @@
 # ui/tabs/preview_tab.py
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QTextEdit, QLabel, QPushButton, QFileDialog, QSlider, QSplitter, QFrame, QLineEdit
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QTextEdit, QLabel, QPushButton, QFileDialog, QSlider, QSplitter, QFrame, QLineEdit, QCheckBox
 from PySide6.QtCore import Qt, Signal, QTimer
 from ui.viewer_3d import Coil3DViewer
 
@@ -40,6 +40,37 @@ class PreviewTab(QWidget):
         self.lbl_z_force = QLabel("Z-axis Force (kg):")
         self.input_z_force = QLineEdit("0.5")
         lay_card_params.addWidget(self.create_form_row(self.input_z_force, self.lbl_z_force))
+
+        # Wait at start (M0)
+        self.lbl_m0_enable = QLabel("Wacht bij start (M0):")
+        self.chk_m0_enable = QCheckBox()
+        self.chk_m0_enable.setChecked(True)
+        lay_card_params.addWidget(self.create_form_row(self.chk_m0_enable, self.lbl_m0_enable))
+
+        # G-code compression
+        self.lbl_compress_gcode = QLabel("G-code compressie:")
+        self.chk_compress_gcode = QCheckBox()
+        self.chk_compress_gcode.setChecked(True)
+        lay_card_params.addWidget(self.create_form_row(self.chk_compress_gcode, self.lbl_compress_gcode))
+
+        # Smart reversal at layer ends
+        self.lbl_smart_reversal = QLabel("Slimme omkeer bij uiteinden:")
+        self.chk_smart_reversal = QCheckBox()
+        self.chk_smart_reversal.setChecked(True)
+        lay_card_params.addWidget(self.create_form_row(self.chk_smart_reversal, self.lbl_smart_reversal))
+
+        # Reversal parameters
+        self.lbl_reversal_speed = QLabel("Omkeersnelheid (%):")
+        self.input_reversal_speed = QLineEdit("50")
+        lay_card_params.addWidget(self.create_form_row(self.input_reversal_speed, self.lbl_reversal_speed))
+
+        self.lbl_reversal_y_retract = QLabel("Omkeer Y-uitwijking (mm):")
+        self.input_reversal_y_retract = QLineEdit("1.0")
+        lay_card_params.addWidget(self.create_form_row(self.input_reversal_y_retract, self.lbl_reversal_y_retract))
+
+        self.lbl_reversal_dwell = QLabel("Wachttijd omkeer (ms):")
+        self.input_reversal_dwell = QLineEdit("200")
+        lay_card_params.addWidget(self.create_form_row(self.input_reversal_dwell, self.lbl_reversal_dwell))
 
         lay_sidebar.addWidget(card_params)
 
@@ -165,7 +196,10 @@ class PreviewTab(QWidget):
         row = QWidget(); lay = QHBoxLayout(row)
         lay.setContentsMargins(0, 2, 0, 2)
         text_label.setObjectName("formLabel")
-        widget_right.setFixedWidth(80)
+        if isinstance(widget_right, QCheckBox):
+            widget_right.setFixedWidth(30)
+        else:
+            widget_right.setFixedWidth(80)
         lay.addWidget(text_label)
         lay.addStretch()
         lay.addWidget(widget_right)
@@ -213,6 +247,13 @@ class PreviewTab(QWidget):
         self.lbl_sidebar_title.setText(tx.get("lbl_modifiers", "MODIFIERS"))
         self.lbl_z_force.setText(tx.get("lbl_z_force", "Z-axis Force (kg):"))
         self.btn_machine_limits.setText(tx.get("btn_machine_limits", "Machine Limieten"))
+
+        self.lbl_m0_enable.setText(tx.get("lbl_m0_enable", "Wacht bij start (M0):"))
+        self.lbl_compress_gcode.setText(tx.get("lbl_compress_gcode", "G-code compressie:"))
+        self.lbl_smart_reversal.setText(tx.get("lbl_smart_reversal", "Slimme omkeer bij uiteinden:"))
+        self.lbl_reversal_speed.setText(tx.get("lbl_reversal_speed", "Omkeersnelheid (%):"))
+        self.lbl_reversal_y_retract.setText(tx.get("lbl_reversal_y_retract", "Omkeer Y-uitwijking (mm):"))
+        self.lbl_reversal_dwell.setText(tx.get("lbl_reversal_dwell", "Wachttijd omkeer (ms):"))
 
         self.lbl_machine_title.setText(tx.get("lbl_machine_settings", "MACHINE SETTINGS"))
         self.lbl_feedrate.setText(tx.get("lbl_feedrate", "Windsnelheid (Feedrate F):"))

@@ -31,7 +31,13 @@
         "lbl_units": "Eenheden:",
         "lbl_gcode_custom": "G-CODE AANPASSING",
         "lbl_start_gcode": "Start G-code:",
-        "lbl_end_gcode": "Eind G-code:"
+        "lbl_end_gcode": "Eind G-code:",
+        "lbl_m0_enable": "Wacht bij start (M0):",
+        "lbl_compress_gcode": "G-code compressie:",
+        "lbl_smart_reversal": "Slimme omkeer bij uiteinden:",
+        "lbl_reversal_speed": "Omkeersnelheid (%):",
+        "lbl_reversal_y_retract": "Omkeer Y-uitwijking (mm):",
+        "lbl_reversal_dwell": "Wachttijd omkeer (ms):"
     },
     "EN": {
         "nav_prepare": "PREPARE",
@@ -65,6 +71,12 @@
         "lbl_units": "Units:",
         "lbl_gcode_custom": "G-CODE CUSTOMIZATION",
         "lbl_start_gcode": "Start G-code:",
-        "lbl_end_gcode": "End G-code:"
+        "lbl_end_gcode": "End G-code:",
+        "lbl_m0_enable": "Wait at start (M0):",
+        "lbl_compress_gcode": "G-code compression:",
+        "lbl_smart_reversal": "Smart reversal at ends:",
+        "lbl_reversal_speed": "Reversal Speed (%):",
+        "lbl_reversal_y_retract": "Reversal Y-retract (mm):",
+        "lbl_reversal_dwell": "Reversal Dwell (ms):"
     }
 }
