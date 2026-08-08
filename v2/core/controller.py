@@ -260,6 +260,26 @@ class CoilController:
             y_offset = float(self.tab_preview.input_y_offset.text())
             feedrate = float(self.tab_preview.input_feedrate.text())
 
+            # Retrieve new smart reversal and wait-at-start (M0) parameters
+            m0_enable = self.tab_preview.chk_m0_enable.isChecked()
+            compress_gcode = self.tab_preview.chk_compress_gcode.isChecked()
+            smart_reversal = self.tab_preview.chk_smart_reversal.isChecked()
+
+            try:
+                reversal_speed_pct = float(self.tab_preview.input_reversal_speed.text())
+            except ValueError:
+                reversal_speed_pct = 50.0
+
+            try:
+                reversal_y_retract = float(self.tab_preview.input_reversal_y_retract.text())
+            except ValueError:
+                reversal_y_retract = 1.0
+
+            try:
+                reversal_dwell_ms = float(self.tab_preview.input_reversal_dwell.text())
+            except ValueError:
+                reversal_dwell_ms = 200.0
+
             # Validation
             pts = self.last_wire_cache['pts_list'][0]
             max_x_calc = np.max(np.abs(pts[:, 2] + wire_offset + spool_offset))
@@ -269,6 +289,10 @@ class CoilController:
             unit = self.tab_settings.combo_units.currentText()
             scale = 1.0 / 25.4 if unit == "inch" else 1.0
             unit_suffix = "inch" if unit == "inch" else "mm"
+
+            # Parse and convert reversal_y_retract to millimeters if input was in inches
+            scale_to_mm = 25.4 if unit == "inch" else 1.0
+            reversal_y_retract_mm = reversal_y_retract * scale_to_mm
 
             error_msgs = []
             if max_x_calc > self.machine_limits["max_x"]:
@@ -295,7 +319,13 @@ class CoilController:
                 z_force=z_force,
                 feedrate=feedrate,
                 units=self.gcode_engine.units,
-                max_x=self.machine_limits["max_x"]
+                max_x=self.machine_limits["max_x"],
+                m0_enable=m0_enable,
+                compress_gcode=compress_gcode,
+                smart_reversal=smart_reversal,
+                reversal_speed_pct=reversal_speed_pct,
+                reversal_y_retract=reversal_y_retract_mm,
+                reversal_dwell_ms=reversal_dwell_ms
             )
             self.tab_preview.set_gcode(gcode)
             QMessageBox.information(self.ui, "Succes", "G-code succesvol gegenereerd.")
