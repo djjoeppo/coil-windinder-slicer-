@@ -206,17 +206,17 @@ class PreviewTab(QWidget):
 
     def retranslate_ui(self, tx):
         self.lbl_title.setText(tx.get("nav_preview", "Preview"))
-        self.btn_save.setText(tx.get("btn_save_gcode", "Save G-code"))
+        self.btn_save.setText(f"💾 {tx.get('btn_save_gcode', 'Save G-code')}")
         self.lbl_start_gcode.setText(tx.get("lbl_start_gcode", "Start G-code:"))
         self.lbl_end_gcode.setText(tx.get("lbl_end_gcode", "End G-code:"))
 
         self.lbl_sidebar_title.setText(tx.get("lbl_modifiers", "MODIFIERS"))
         self.lbl_z_force.setText(tx.get("lbl_z_force", "Z-axis Force (kg):"))
-        self.btn_machine_limits.setText(tx.get("btn_machine_limits", "Machine Limieten"))
+        self.btn_machine_limits.setText(f"📏 {tx.get('btn_machine_limits', 'Machine Limieten')}")
 
         self.lbl_machine_title.setText(tx.get("lbl_machine_settings", "MACHINE SETTINGS"))
         self.lbl_feedrate.setText(tx.get("lbl_feedrate", "Windsnelheid (Feedrate F):"))
         self.lbl_wire_offset.setText(tx.get("lbl_wire_offset", "Draad Offset (mm):"))
         self.lbl_spool_offset.setText(tx.get("lbl_spool_offset", "Spoel X-Offset (mm):"))
         self.lbl_y_offset.setText(tx.get("lbl_y_offset", "Y Offset:"))
-        self.btn_update_gcode.setText(tx.get("btn_update_gcode", "Update G-Code & Offsets"))
+        self.btn_update_gcode.setText(f"⚙️ {tx.get('btn_update_gcode', 'Update G-Code & Offsets')}")

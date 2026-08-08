@@ -107,7 +107,7 @@ class CoilMathEngine:
         return tangents, v_side, v_up
 
     @staticmethod
-    def calculate_spool_geometry(hole_d, inner_d, flange_d, width, cols=60):
+    def calculate_spool_geometry(hole_d, inner_d, flange_l_d, flange_r_d, width, cols=60):
         """Berekent puur de hoekpunten (vertices) en vlakken (faces) van de spoel/hub."""
         r_out = inner_d / 2
         r_in = hole_d / 2
@@ -117,5 +117,6 @@ class CoilMathEngine:
             "r_in": r_in,
             "cols": cols,
             "width": width,
-            "flange_d": flange_d
+            "flange_l_d": flange_l_d,
+            "flange_r_d": flange_r_d
         }

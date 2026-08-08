@@ -93,6 +93,7 @@ class SettingsTab(QWidget):
         self.lbl_p_res.setText(tx.get("lbl_p_res", "Path Resolution:"))
         self.lbl_theme.setText(tx.get("lbl_theme", "Theme:"))
         self.lbl_lang.setText(tx.get("lbl_lang", "Language:"))
+        self.btn_materials.setText(f"📦 {tx.get('btn_materials', 'Materialenbeheer')}")
         
         self.combo_theme.blockSignals(True)
         self.combo_theme.clear()

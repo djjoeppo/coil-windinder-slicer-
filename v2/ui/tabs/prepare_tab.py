@@ -1,7 +1,7 @@
 # ui/tabs/prepare_tab.py
 import os
 import json
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QFrame, QLabel, QLineEdit, QComboBox, QScrollArea, QPushButton, QSplitter
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QFrame, QLabel, QLineEdit, QComboBox, QScrollArea, QPushButton, QSplitter, QCheckBox
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap, QIcon, QColor
 from core.config import TRANSLATIONS, get_resource_path
@@ -68,13 +68,33 @@ class PrepareTab(QWidget):
         
         self.lbl_inner_d = QLabel(); self.inputs["i"] = QLineEdit("35")
         self.lbl_hole_d = QLabel(); self.inputs["hole"] = QLineEdit("0")
-        self.lbl_flange_d = QLabel(); self.inputs["f"] = QLineEdit("90")
+
+        self.chk_flange_l = QCheckBox()
+        self.chk_flange_l.setChecked(True)
+        self.chk_flange_l.stateChanged.connect(self.on_flange_toggled)
+        self.lbl_flange_l_d = QLabel()
+        self.inputs["f_l"] = QLineEdit("90")
+
+        self.chk_flange_r = QCheckBox()
+        self.chk_flange_r.setChecked(True)
+        self.chk_flange_r.stateChanged.connect(self.on_flange_toggled)
+        self.lbl_flange_r_d = QLabel()
+        self.inputs["f_r"] = QLineEdit("90")
+
         self.lbl_width = QLabel(); self.inputs["b"] = QLineEdit("50")
         self.lbl_spool_color = QLabel(); self.combo_spool_color = QComboBox()
         
         lay_card_spool.addWidget(self.create_form_row(self.inputs["i"], self.lbl_inner_d))
         lay_card_spool.addWidget(self.create_form_row(self.inputs["hole"], self.lbl_hole_d))
-        lay_card_spool.addWidget(self.create_form_row(self.inputs["f"], self.lbl_flange_d))
+
+        lay_card_spool.addWidget(self.chk_flange_l)
+        self.row_flange_l = self.create_form_row(self.inputs["f_l"], self.lbl_flange_l_d)
+        lay_card_spool.addWidget(self.row_flange_l)
+
+        lay_card_spool.addWidget(self.chk_flange_r)
+        self.row_flange_r = self.create_form_row(self.inputs["f_r"], self.lbl_flange_r_d)
+        lay_card_spool.addWidget(self.row_flange_r)
+
         lay_card_spool.addWidget(self.create_form_row(self.inputs["b"], self.lbl_width))
             
         lay_card_spool.addWidget(self.lbl_spool_color)
@@ -214,12 +234,20 @@ class PrepareTab(QWidget):
                     self.input_wire_d_display.setText(f"{total_d:.2f} mm")
                 return
 
+    def on_flange_toggled(self):
+        show_l = self.chk_flange_l.isChecked()
+        show_r = self.chk_flange_r.isChecked()
+        self.row_flange_l.setVisible(show_l)
+        self.row_flange_r.setVisible(show_r)
+        if hasattr(self.main_window, 'controller'):
+            self.main_window.controller.update_spool_visibility()
+
     def on_unit_changed(self, unit_text):
         """Converts currently typed values in the inputs from old unit to new unit, and updates the display."""
         from core.config import parse_fraction_or_float, mm_to_inch, inch_to_mm
 
-        # Convert the inputs: i, hole, f, b
-        keys_to_convert = ['i', 'hole', 'f', 'b']
+        # Convert the inputs: i, hole, f_l, f_r, b
+        keys_to_convert = ['i', 'hole', 'f_l', 'f_r', 'b']
 
         for k in keys_to_convert:
             if k in self.inputs:
@@ -292,13 +320,18 @@ class PrepareTab(QWidget):
 
         inner_d_txt = tx.get("lbl_inner_d", "Kern Diameter (mm):").replace(" (mm):", suffix).replace(" (inch):", suffix)
         hole_d_txt = tx.get("lbl_hole_d", "Gat Diameter (mm):").replace(" (mm):", suffix).replace(" (inch):", suffix)
-        flange_d_txt = tx.get("lbl_flange_d", "Flens Diameter (mm):").replace(" (mm):", suffix).replace(" (inch):", suffix)
+        flange_l_d_txt = tx.get("lbl_flange_l_d", "Flens L Diameter (mm):").replace(" (mm):", suffix).replace(" (inch):", suffix)
+        flange_r_d_txt = tx.get("lbl_flange_r_d", "Flens R Diameter (mm):").replace(" (mm):", suffix).replace(" (inch):", suffix)
         width_txt = tx.get("lbl_width", "Spoel Breedte (mm):").replace(" (mm):", suffix).replace(" (inch):", suffix)
 
         self.lbl_inner_d.setText(inner_d_txt)
         self.lbl_hole_d.setText(hole_d_txt)
-        self.lbl_flange_d.setText(flange_d_txt)
+        self.lbl_flange_l_d.setText(flange_l_d_txt)
+        self.lbl_flange_r_d.setText(flange_r_d_txt)
         self.lbl_width.setText(width_txt)
+
+        self.chk_flange_l.setText(tx.get("chk_flange_l", "Linkerflens (Onder)"))
+        self.chk_flange_r.setText(tx.get("chk_flange_r", "Rechterflens (Boven)"))
 
         self.lbl_spool_color.setText(tx["lbl_spool_color"])
         self.lbl_material.setText(tx["lbl_material"])
@@ -311,8 +344,8 @@ class PrepareTab(QWidget):
         self.lbl_wire_type.setText(tx["lbl_wire_type"])
         self.lbl_num_wires.setText(tx["lbl_num_wires"])
         self.lbl_single_color.setText(tx["lbl_single_color"])
-        self.btn_update.setText(tx["btn_update"])
-        self.btn_toggle_spool.setText(tx["btn_toggle_spool"])
+        self.btn_update.setText(f"📐 {tx['btn_update']}")
+        self.btn_toggle_spool.setText(f"👁️ {tx['btn_toggle_spool']}")
         
         current_text = self.combo_material.currentText()
         self.load_materials_into_combobox()
