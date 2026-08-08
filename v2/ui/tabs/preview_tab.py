@@ -220,3 +220,9 @@ class PreviewTab(QWidget):
         self.lbl_spool_offset.setText(tx.get("lbl_spool_offset", "Spoel X-Offset (mm):"))
         self.lbl_y_offset.setText(tx.get("lbl_y_offset", "Y Offset:"))
         self.btn_update_gcode.setText(tx.get("btn_update_gcode", "Update G-Code & Offsets"))
+
+        # Accessibility improvements for play button (icon-only button)
+        play_tooltip = tx.get("btn_play_tooltip", "▶")
+        self.btn_play.setToolTip(play_tooltip)
+        self.btn_play.setAccessibleName(play_tooltip)
+        self.btn_play.setAccessibleDescription(play_tooltip)
