@@ -313,6 +313,12 @@ class PrepareTab(QWidget):
         self.lbl_single_color.setText(tx["lbl_single_color"])
         self.btn_update.setText(tx["btn_update"])
         self.btn_toggle_spool.setText(tx["btn_toggle_spool"])
+
+        # Accessibility improvements for material edit button (icon-only button)
+        materials_tooltip = tx.get("btn_edit_materials_tooltip", "📝")
+        self.btn_edit_materials.setToolTip(materials_tooltip)
+        self.btn_edit_materials.setAccessibleName(materials_tooltip)
+        self.btn_edit_materials.setAccessibleDescription(materials_tooltip)
         
         current_text = self.combo_material.currentText()
         self.load_materials_into_combobox()
