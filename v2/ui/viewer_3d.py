@@ -111,7 +111,8 @@ class Coil3DViewer(gl.GLViewWidget):
         r_in = spool_data["r_in"]
         cols = spool_data["cols"]
         width = spool_data["width"]
-        flange_d = spool_data["flange_d"]
+        flange_l_d = spool_data.get("flange_l_d", 90.0)
+        flange_r_d = spool_data.get("flange_r_d", 90.0)
 
         if r_in > 0:
             ang = np.linspace(0, 2*np.pi, cols, endpoint=False)
@@ -139,7 +140,7 @@ class Coil3DViewer(gl.GLViewWidget):
                 f.append([b, i, n]); f.append([t, i+cols, n+cols])
             hub_mesh = gl.MeshData(vertexes=v.astype(np.float32), faces=np.array(f, dtype=np.uint32))
 
-        def _make_flange(z_offset, thickness):
+        def _make_flange(z_offset, thickness, flange_d):
             rf_out = flange_d / 2
             rf_in = r_in
             ang = np.linspace(0, 2*np.pi, cols, endpoint=False)
@@ -159,8 +160,8 @@ class Coil3DViewer(gl.GLViewWidget):
             return gl.MeshData(vertexes=v_fl.astype(np.float32), faces=np.array(f_fl, dtype=np.uint32))
 
         self.hub.setMeshData(meshdata=hub_mesh)
-        self.flange_l.setMeshData(meshdata=_make_flange(-3, 3))
-        self.flange_r.setMeshData(meshdata=_make_flange(width, 3))
+        self.flange_l.setMeshData(meshdata=_make_flange(-3, 3, flange_l_d))
+        self.flange_r.setMeshData(meshdata=_make_flange(width, 3, flange_r_d))
 
     def render_wire_meshes(self, meshes_data):
         """Render wire meshes efficiently by reusing items when possible (Bolt optimization)."""

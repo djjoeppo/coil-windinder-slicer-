@@ -9,6 +9,10 @@
         "lbl_inner_d": "Kern Diameter (mm):",
         "lbl_hole_d": "Gat Diameter (mm):",
         "lbl_flange_d": "Flens Diameter (mm):",
+        "lbl_flange_l_d": "Flens L Diameter (mm):",
+        "lbl_flange_r_d": "Flens R Diameter (mm):",
+        "chk_flange_l": "Linkerflens (Onder)",
+        "chk_flange_r": "Rechterflens (Boven)",
         "lbl_width": "Spoel Breedte (mm):",
         "lbl_spool_color": "Kleur Spoel:",
         "lbl_material": "Draad Materiaal:",
@@ -31,7 +35,11 @@
         "lbl_units": "Eenheden:",
         "lbl_gcode_custom": "G-CODE AANPASSING",
         "lbl_start_gcode": "Start G-code:",
-        "lbl_end_gcode": "Eind G-code:"
+        "lbl_end_gcode": "Eind G-code:",
+        "btn_materials": "Materialenbeheer",
+        "btn_refresh": "Ververs Poorten",
+        "btn_start_winding": "Start Wikkelen",
+        "btn_reset_program": "Reset Programma"
     },
     "EN": {
         "nav_prepare": "PREPARE",
@@ -43,6 +51,10 @@
         "lbl_inner_d": "Core Diameter (mm):",
         "lbl_hole_d": "Hole Diameter (mm):",
         "lbl_flange_d": "Flange Diameter (mm):",
+        "lbl_flange_l_d": "Flange L Diameter (mm):",
+        "lbl_flange_r_d": "Flange R Diameter (mm):",
+        "chk_flange_l": "Left Flange (Bottom)",
+        "chk_flange_r": "Right Flange (Top)",
         "lbl_width": "Spool Width (mm):",
         "lbl_spool_color": "Spool Color:",
         "lbl_material": "Wire Material:",
@@ -65,6 +77,10 @@
         "lbl_units": "Units:",
         "lbl_gcode_custom": "G-CODE CUSTOMIZATION",
         "lbl_start_gcode": "Start G-code:",
-        "lbl_end_gcode": "End G-code:"
+        "lbl_end_gcode": "End G-code:",
+        "btn_materials": "Material Management",
+        "btn_refresh": "Refresh Ports",
+        "btn_start_winding": "Start Winding",
+        "btn_reset_program": "Reset Program"
     }
 }

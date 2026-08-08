@@ -179,13 +179,13 @@ class DeviceTab(QWidget):
                 
     def on_connected(self, msg):
         self.lbl_status.setText(f"Status: {msg}")
-        self.btn_connect.setText("Disconnect")
+        self.btn_connect.setText("🔌 Disconnect")
         self.btn_send.setEnabled(True)
         self.terminal.append(f"--- Connected to {msg} ---")
         
     def on_disconnected(self):
         self.lbl_status.setText("Status: Disconnected")
-        self.btn_connect.setText("Connect")
+        self.btn_connect.setText("🔌 Connect")
         self.btn_send.setEnabled(False)
         self.terminal.append("--- Disconnected ---")
         
@@ -325,11 +325,12 @@ class DeviceTab(QWidget):
 
     def retranslate_ui(self, tx):
         self.lbl_title.setText(tx.get("nav_device", "Device"))
-        self.btn_refresh.setText(tx.get("btn_refresh", "Refresh Ports"))
+        self.btn_refresh.setText(f"🔄 {tx.get('btn_refresh', 'Refresh Ports')}")
         self.lbl_port.setText(tx.get("lbl_port", "Serial Port:"))
-        self.btn_connect.setText("Disconnect" if self.worker.is_connected() else "Connect")
-        self.btn_send.setText(tx.get("btn_start_winding", "Start Winding"))
-        self.btn_emergency.setText(tx.get("btn_reset_program", "🔄 Reset Programma"))
+        conn_text = "Disconnect" if self.worker.is_connected() else "Connect"
+        self.btn_connect.setText(f"🔌 {conn_text}")
+        self.btn_send.setText(f"▶️ {tx.get('btn_start_winding', 'Start Winding')}")
+        self.btn_emergency.setText(f"🚨 {tx.get('btn_reset_program', 'Reset Programma')}")
 
         # Update DRO unit labels dynamically based on settings unit
         unit = self.main_window.tab_settings.combo_units.currentText() if hasattr(self.main_window, 'tab_settings') else "mm"

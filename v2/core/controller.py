@@ -63,8 +63,19 @@ class CoilController:
 
     def toggle_spool(self):
         self.spool_visible = not self.spool_visible
-        self.viewer.set_spool_visibility(self.spool_visible)
-        self.preview_viewer.set_spool_visibility(self.spool_visible)
+        self.update_spool_visibility()
+
+    def update_spool_visibility(self):
+        chk_l = self.tab_prepare.chk_flange_l.isChecked()
+        chk_r = self.tab_prepare.chk_flange_r.isChecked()
+
+        self.viewer.hub.setVisible(self.spool_visible)
+        self.viewer.flange_l.setVisible(self.spool_visible and chk_l)
+        self.viewer.flange_r.setVisible(self.spool_visible and chk_r)
+
+        self.preview_viewer.hub.setVisible(self.spool_visible)
+        self.preview_viewer.flange_l.setVisible(self.spool_visible and chk_l)
+        self.preview_viewer.flange_r.setVisible(self.spool_visible and chk_r)
 
     def update_simulation(self, slider_value):
         """Update the 3D viewer in the Preview tab based on simulation progress (Bolt optimized)."""
@@ -142,15 +153,22 @@ class CoilController:
             scale_to_mm = 25.4 if unit == "inch" else 1.0
 
             # Parse inputs (supporting fractions and mixed fractions)
+            chk_l = self.tab_prepare.chk_flange_l.isChecked()
+            chk_r = self.tab_prepare.chk_flange_r.isChecked()
+
             i_val = parse_fraction_or_float(self.tab_prepare.inputs['i'].text()) * scale_to_mm
             hole_val = parse_fraction_or_float(self.tab_prepare.inputs['hole'].text()) * scale_to_mm
-            f_val = parse_fraction_or_float(self.tab_prepare.inputs['f'].text()) * scale_to_mm
+
+            f_l_val = parse_fraction_or_float(self.tab_prepare.inputs['f_l'].text()) * scale_to_mm if chk_l else i_val
+            f_r_val = parse_fraction_or_float(self.tab_prepare.inputs['f_r'].text()) * scale_to_mm if chk_r else i_val
+
             b_val = parse_fraction_or_float(self.tab_prepare.inputs['b'].text()) * scale_to_mm
 
             v = {
                 'i': i_val,
                 'hole': hole_val,
-                'f': f_val,
+                'f_l': f_l_val,
+                'f_r': f_r_val,
                 'b': b_val,
                 'l': int(self.tab_prepare.inputs['l'].text()),
                 't_res': float(self.tab_settings.inputs['t_res'].text()),
@@ -179,13 +197,14 @@ class CoilController:
                 self.tab_prepare.inputs['hole'].setText(str(v['hole']))
 
             wire_key = (v['w'], v['l'], v['i'], v['b'], v['t_res'], v['p_res'], num_wires)
-            spool_key = (v['hole'], v['i'], v['f'], v['b'])
+            spool_key = (v['hole'], v['i'], f_l_val, f_r_val, v['b'])
 
             if self.last_spool_cache is None or self.last_spool_cache != spool_key:
-                spool_data = CoilMathEngine.calculate_spool_geometry(v['hole'], v['i'], v['f'], v['b'])
+                spool_data = CoilMathEngine.calculate_spool_geometry(v['hole'], v['i'], f_l_val, f_r_val, v['b'])
                 self.viewer.build_spool_meshes(spool_data)
                 self.preview_viewer.build_spool_meshes(spool_data)
                 self.last_spool_cache = spool_key
+                self.update_spool_visibility()
 
             if self.last_wire_cache is None or self.last_wire_cache['key'] != wire_key:
                 self.start_calculation(v, wire_key)
