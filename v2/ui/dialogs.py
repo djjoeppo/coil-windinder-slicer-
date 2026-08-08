@@ -324,7 +324,16 @@ class MaterialsPopUp(QDialog):
         self.update_list_widget(select_index=new_idx)
 
     def apply_theme(self):
-        if self.is_light_theme:
+        theme = "dark"
+        try:
+            if self.parent() and hasattr(self.parent(), 'main_window'):
+                theme = self.parent().main_window.current_theme
+            elif self.parent() and hasattr(self.parent(), 'current_theme'):
+                theme = self.parent().current_theme
+        except Exception:
+            pass
+
+        if theme == "light":
             self.setStyleSheet("""
                 QDialog { background-color: #f8f9fa; }
                 QLabel#sectionTitle { color: #000000; font-weight: bold; font-size: 14px; border-bottom: 1px solid #dee2e6; padding-bottom: 4px; margin-bottom: 5px; }
@@ -342,6 +351,25 @@ class MaterialsPopUp(QDialog):
                 QPushButton#actionBtnSave:hover { background-color: #0096ff; }
                 QPushButton#actionBtnDelete { background-color: #dc3545; color: white; border: none; }
                 QPushButton#actionBtnDelete:hover { background-color: #ff4d5e; }
+            """)
+        elif theme == "test":
+            self.setStyleSheet("""
+                QDialog { background-color: #0f172a; }
+                QLabel#sectionTitle { color: #38bdf8; font-weight: bold; font-size: 14px; border-bottom: 1px solid #334155; padding-bottom: 4px; margin-bottom: 5px; }
+                QLabel#formLabel { color: #94a3b8; font-weight: 500; }
+                QListWidget#materialList { background-color: #0f172a; border: 1px solid #334155; border-radius: 4px; color: #f8fafc; padding: 5px; }
+                QListWidget#materialList::item { padding: 6px; border-bottom: 1px solid #1e293b; }
+                QListWidget#materialList::item:hover { background-color: #1e293b; border-radius: 3px; }
+                QListWidget#materialList::item:selected { background-color: #0ea5e9; color: white; border-radius: 3px; }
+                QFrame#sectionCard { background-color: #1e293b; border: 1px solid #334155; border-radius: 6px; }
+                QLineEdit { background-color: #0f172a; color: #f8fafc; border: 1px solid #475569; border-radius: 3px; padding: 4px; }
+                QLineEdit:focus { border: 1px solid #38bdf8; }
+                QPushButton { background-color: #334155; color: #f8fafc; border: 1px solid #475569; border-radius: 4px; padding: 6px; font-weight: bold; }
+                QPushButton:hover { background-color: #475569; border-color: #38bdf8; }
+                QPushButton#actionBtnSave { background-color: #0ea5e9; color: white; border: none; }
+                QPushButton#actionBtnSave:hover { background-color: #38bdf8; }
+                QPushButton#actionBtnDelete { background-color: #ef4444; color: white; border: none; }
+                QPushButton#actionBtnDelete:hover { background-color: #f87171; }
             """)
         else:
             self.setStyleSheet("""

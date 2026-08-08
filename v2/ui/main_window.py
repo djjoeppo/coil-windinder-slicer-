@@ -140,7 +140,8 @@ class CoilAppLayout(QWidget):
 
     def apply_orca_theme(self):
         # Check de index van de dropdown in de settings tab
-        if self.tab_settings.combo_theme.currentIndex() == 1:
+        theme_idx = self.tab_settings.combo_theme.currentIndex()
+        if theme_idx == 1:
             self.current_theme = "light"
             self.setStyleSheet("""
                 QWidget { background-color: #f8f9fa; color: #212529; font-family: 'Segoe UI', Arial; font-size: 12px; }
@@ -164,6 +165,31 @@ class CoilAppLayout(QWidget):
                 QPushButton#sliceActionButton:hover { background-color: #0096ff; }
                 QPushButton#secondaryActionButton { background-color: #e9ecef; color: #212529; padding: 7px; border: 1px solid #ced4da; border-radius: 4px; }
                 QPushButton#secondaryActionButton:hover { background-color: #dee2e6; }
+            """)
+        elif theme_idx == 2:
+            self.current_theme = "test"
+            self.setStyleSheet("""
+                QWidget { background-color: #0f172a; color: #f8fafc; font-family: 'Segoe UI', Arial; font-size: 12px; }
+                QFrame#topBar { background-color: #1e293b; border-bottom: 2px solid #0ea5e9; min-height: 48px; max-height: 48px; }
+                QPushButton#navBtn { background: transparent; color: #94a3b8; border: none; padding: 0px 22px; font-weight: bold; font-size: 13px; height: 48px; }
+                QPushButton#navBtn:hover { color: #f8fafc; background-color: #334155; }
+                QPushButton#navBtn:checked { color: #ffffff; background-color: #0ea5e9; border-radius: 4px; height: 40px; margin: 4px 0px; }
+                QWidget#sidebarContainer { background-color: #1e293b; border-right: 1px solid #334155; }
+                QWidget#settingsPage { background-color: #0f172a; }
+                QFrame#sectionCard { background-color: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 14px; }
+                QLabel#sectionTitle { color: #38bdf8; font-weight: bold; font-size: 13px; border-bottom: 1px solid #334155; padding-bottom: 6px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+                QLabel#formLabel { color: #94a3b8; font-weight: 500; }
+                QPushButton#editMaterialsBtn { background-color: #334155; border: 1px solid #475569; border-radius: 4px; font-size: 12px; color: #f8fafc; }
+                QPushButton#editMaterialsBtn:hover { background-color: #475569; border-color: #38bdf8; }
+                QLineEdit { background-color: #0f172a; color: #f8fafc; border: 1px solid #475569; border-radius: 4px; padding: 3px 5px; }
+                QLineEdit:focus { border: 1px solid #38bdf8; }
+                QComboBox { background-color: #334155; color: #f8fafc; border: 1px solid #475569; border-radius: 4px; padding: 3px 5px; }
+                QComboBox::drop-down { border: none; }
+                QScrollArea#paramScroll { border: none; background-color: transparent; }
+                QPushButton#sliceActionButton { background-color: #0ea5e9; color: white; font-weight: bold; font-size: 13px; padding: 10px; border: none; border-radius: 4px; }
+                QPushButton#sliceActionButton:hover { background-color: #38bdf8; }
+                QPushButton#secondaryActionButton { background-color: #334155; color: #f8fafc; padding: 7px; border: 1px solid #475569; border-radius: 4px; }
+                QPushButton#secondaryActionButton:hover { background-color: #475569; border-color: #38bdf8; }
             """)
         else:
             self.current_theme = "dark"

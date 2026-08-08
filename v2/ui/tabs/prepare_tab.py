@@ -182,6 +182,78 @@ class PrepareTab(QWidget):
         self.splitter.addWidget(self.viewer)
         self.splitter.setStretchFactor(1, 1) # Viewer should grow
 
+        # Real-time validation connections
+        for key in ["i", "hole", "f_l", "f_r", "b", "l"]:
+            if key in self.inputs:
+                self.inputs[key].textChanged.connect(self.validate_inputs)
+        self.chk_flange_l.stateChanged.connect(self.validate_inputs)
+        self.chk_flange_r.stateChanged.connect(self.validate_inputs)
+        self.validate_inputs()
+
+    def validate_inputs(self):
+        from core.config import parse_fraction_or_float
+
+        errors = {}
+        lang = getattr(self.main_window, 'current_lang', 'NL')
+
+        # 1. Parse values
+        i_val = parse_fraction_or_float(self.inputs["i"].text())
+        hole_val = parse_fraction_or_float(self.inputs["hole"].text())
+        b_val = parse_fraction_or_float(self.inputs["b"].text())
+
+        # Layers
+        try:
+            l_val = int(self.inputs["l"].text())
+        except ValueError:
+            l_val = 0
+
+        # Validate core
+        if i_val <= 0:
+            errors["i"] = "Kern diameter moet groter zijn dan 0." if lang == "NL" else "Core diameter must be greater than 0."
+
+        # Validate hole
+        if hole_val < 0:
+            errors["hole"] = "Gat diameter mag niet negatief zijn." if lang == "NL" else "Hole diameter cannot be negative."
+        elif hole_val >= i_val and i_val > 0:
+            errors["hole"] = f"Gat diameter ({hole_val}) moet kleiner zijn dan de kern diameter ({i_val})." if lang == "NL" else f"Hole diameter ({hole_val}) must be smaller than core diameter ({i_val})."
+
+        # Validate flange left
+        if self.chk_flange_l.isChecked() and "f_l" in self.inputs:
+            f_l_val = parse_fraction_or_float(self.inputs["f_l"].text())
+            if f_l_val < i_val:
+                errors["f_l"] = f"Flens L diameter ({f_l_val}) moet minstens gelijk zijn aan de kern diameter ({i_val})." if lang == "NL" else f"Flange L diameter ({f_l_val}) must be at least equal to core diameter ({i_val})."
+
+        # Validate flange right
+        if self.chk_flange_r.isChecked() and "f_r" in self.inputs:
+            f_r_val = parse_fraction_or_float(self.inputs["f_r"].text())
+            if f_r_val < i_val:
+                errors["f_r"] = f"Flens R diameter ({f_r_val}) moet minstens gelijk zijn aan de kern diameter ({i_val})." if lang == "NL" else f"Flange R diameter ({f_r_val}) must be at least equal to core diameter ({i_val})."
+
+        # Validate width
+        if b_val <= 0:
+            errors["b"] = "Spoel breedte moet groter zijn dan 0." if lang == "NL" else "Spool width must be greater than 0."
+
+        # Validate layers
+        if l_val <= 0:
+            errors["l"] = "Aantal lagen moet minstens 1 zijn." if lang == "NL" else "Number of layers must be at least 1."
+
+        # Apply styles and tooltips
+        for key, edit in self.inputs.items():
+            if key in ["i", "hole", "f_l", "f_r", "b", "l"]:
+                if key in errors:
+                    edit.setStyleSheet("border: 1.5px solid #ef4444; background-color: rgba(239, 68, 68, 0.05);")
+                    edit.setToolTip(errors[key])
+                else:
+                    edit.setStyleSheet("")
+                    edit.setToolTip("")
+
+        # Disable / Enable slice button based on errors
+        self.btn_update.setEnabled(len(errors) == 0)
+        if len(errors) > 0:
+            self.btn_update.setToolTip("Sommige invoervelden zijn ongeldig." if lang == "NL" else "Some inputs are invalid.")
+        else:
+            self.btn_update.setToolTip("")
+
     def create_form_row(self, widget_right, text_label):
         row = QWidget(); lay = QHBoxLayout(row)
         lay.setContentsMargins(0, 2, 0, 2)

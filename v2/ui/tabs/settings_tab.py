@@ -99,7 +99,8 @@ class SettingsTab(QWidget):
         self.combo_theme.clear()
         self.combo_theme.addItem(tx.get("theme_dark", "Dark Mode"))
         self.combo_theme.addItem(tx.get("theme_light", "Light Mode"))
-        self.combo_theme.setCurrentIndex(curr_theme_idx if curr_theme_idx >= 0 else 0)
+        self.combo_theme.addItem(tx.get("theme_test", "Test"))
+        self.combo_theme.setCurrentIndex(curr_theme_idx if curr_theme_idx >= 0 and curr_theme_idx < 3 else 0)
         self.combo_theme.blockSignals(False)
         
         self.lbl_units.setText(tx.get("lbl_units", "Units:"))

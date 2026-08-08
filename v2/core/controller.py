@@ -164,15 +164,30 @@ class CoilController:
 
             b_val = parse_fraction_or_float(self.tab_prepare.inputs['b'].text()) * scale_to_mm
 
+            try:
+                l_val = int(self.tab_prepare.inputs['l'].text())
+            except ValueError:
+                l_val = 1
+
+            try:
+                t_res_val = float(self.tab_settings.inputs['t_res'].text())
+            except ValueError:
+                t_res_val = 16.0
+
+            try:
+                p_res_val = float(self.tab_settings.inputs['p_res'].text())
+            except ValueError:
+                p_res_val = 32.0
+
             v = {
                 'i': i_val,
                 'hole': hole_val,
                 'f_l': f_l_val,
                 'f_r': f_r_val,
                 'b': b_val,
-                'l': int(self.tab_prepare.inputs['l'].text()),
-                't_res': float(self.tab_settings.inputs['t_res'].text()),
-                'p_res': float(self.tab_settings.inputs['p_res'].text()),
+                'l': l_val,
+                't_res': t_res_val,
+                'p_res': p_res_val,
                 'is_multi': is_multi,
                 'num_wires': num_wires
             }
